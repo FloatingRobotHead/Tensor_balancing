@@ -1,0 +1,30 @@
+{
+  "name": "Patchwork chain",
+  "n": 15,
+  "snapshots": 100000,
+  "metadata": {
+    "id": "patchwork",
+    "title": "Patchwork chain \u00b7 pooled",
+    "family": 1,
+    "family_name": "Patchwork chain",
+    "group": "rich",
+    "level": 1,
+    "severity": "standard",
+    "situation": "A 123-monomer chain has three sections with different mobility, bending penalties, and backbone stiffness; ABC supports pairs and DEF supports pairs and triples.",
+    "setting_id": "patchwork",
+    "kind": "observed",
+    "replicate": 0,
+    "snapshots": 100000,
+    "replicates": 4,
+    "seeds": [
+      2026100906101,
+      2026100906102,
+      2026100906103,
+      2026100906104
+    ],
+    "raw_sha256": "2d5602d008d67d9457ac072932e99caa499e168399941e92395a9cc09f35264c",
+    "source_archive": "All_Simulators_One_File.zip",
+    "source_member": "Simulator_Handoff/reference_tensors/six_families/patchwork/raw.npz",
+    "raw_float64_sha256": "0c665550c9341b31dfa31a6cd5ae602bc9e2d589734b651de7f3ef3c65b8af44"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "status": "passed",
+  "engine": "actual embedded JavaScript + native canvas, simulated DOM",
+  "plots": {
+    "raw": {
+      "width": 450,
+      "height": 300,
+      "color_count": 1778
+    },
+    "remaining": {
+      "width": 450,
+      "height": 300,
+      "color_count": 735
+    },
+    "vector": {
+      "width": 450,
+      "height": 300,
+      "color_count": 369
+    },
+    "matrix": {
+      "width": 450,
+      "height": 450,
+      "color_count": 290
+    },
+    "slice": {
+      "width": 450,
+      "height": 450,
+      "color_count": 230
+    }
+  },
+  "rotationChanged": true,
+  "sliceChanged": true,
+  "scriptErrors": 0,
+  "fullBrowserLayoutTest": false
+}

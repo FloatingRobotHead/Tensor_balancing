@@ -1,0 +1,23 @@
+{
+  "README.md": "cb8bc9f3e9daad5c2f86ee760b49ddc887d201ff1c8d959d1df42dfdbeb7cb0e",
+  "SOLVER_PROVENANCE.json": "01ca7092601c9180167ef9808b3e6af951726777fbb703dcd1aaa25a2b8b0252",
+  "VALIDATION.json": "80929ac824accc719a6f81a8e0602c4a0a76142215ce1db9a29823ac294b0c32",
+  "examples/PROVENANCE.json": "c8d1cfb98541b4baca1dba660068d269d184ba892cdd55ff1307915542ec7e49",
+  "examples/patchwork.npy": "4d06ebd51d92e576fee178715c8f4a6b79dbd8449e81888582c0a9f023684415",
+  "examples/patchwork.npz": "685058e987f702aae5a7b7df4673efa58b7d3b6222b8d57b1f2a25f68f443fef",
+  "pyproject.toml": "38053bc9bad139c6f7fc67194b42c64c65918a1523240478ab324eb25b5c68a1",
+  "tensor_balance.py": "ff704297cc937a74db51e81d3aef7485ec587811c95d33fda8344dfa139c478b",
+  "tensorbalance/__init__.py": "f6d965bac2c6c4c5a850063894f6d19775a03f46d323d6aaeb419103ab43c9d9",
+  "tensorbalance/__main__.py": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d",
+  "tensorbalance/cli.py": "70bb682bb43bf2e1cc6a929bdfabe51518bd22d64da9daaa24a868bc5daa33df",
+  "tensorbalance/decompose.py": "7d74bd42a66e5c9cb3536099a7f92f2ad6bc12dd70638e09360597a49a7463e4",
+  "tensorbalance/input.py": "101c82b1452d6b993a2ce1943bcc8d5d5aece2369e9d9558fbffc45d0eb91b39",
+  "tensorbalance/solvers/__init__.py": "293bf869623e53dd50723185fb03065ebf64568ee626d1a8590844cddc497083",
+  "tensorbalance/solvers/balanced_loganova.py": "4a1da69d9420b5a42bea47d1fb1861521824287803bf6943b9b018593e378c06",
+  "tensorbalance/solvers/binomial_fit.py": "fd4e825e2663aa07dc4cd823c12b169021a604c41cebbdc57fdd9852d303a82d",
+  "tensorbalance/solvers/dh_sqrt.py": "e4c8cd42aae4812b69a3f5ffd838d0ff0816fe13b02a42ca86c7516b55297f93",
+  "tensorbalance/solvers/repaired_binomial.py": "b20f89bffd50938dae43bf19d2a5473b6ad4fe3b46ae30a7277d7aa9dcd83a40",
+  "tensorbalance/view.html": "54d252014c1ab2d9fd6c7b9ba4a42bc60347be45850456ce54b5c0e839178447",
+  "tensorbalance/visualize.py": "78238dd07f362bc92d86d17570a7755b53c36b89b822a82fac6de558b2dffe66",
+  "tests/test_cli.py": "46bfbc9b1838ec6c8de2db8749cc04c6f38385c9a971dcffb138ec1bd5778905"
+}

@@ -1,0 +1,26 @@
+{
+  "dh_sqrt.py": {
+    "source_sha256": "e4c8cd42aae4812b69a3f5ffd838d0ff0816fe13b02a42ca86c7516b55297f93",
+    "packaged_sha256": "e4c8cd42aae4812b69a3f5ffd838d0ff0816fe13b02a42ca86c7516b55297f93",
+    "change": "Unchanged",
+    "release_0_1_0_packaged_sha256": "e4c8cd42aae4812b69a3f5ffd838d0ff0816fe13b02a42ca86c7516b55297f93"
+  },
+  "balanced_loganova.py": {
+    "source_sha256": "6c489ddf2bec08cb937a1b25b8679d49ce5b2adc8dea617b380ab321bf4f972d",
+    "packaged_sha256": "4a1da69d9420b5a42bea47d1fb1861521824287803bf6943b9b018593e378c06",
+    "change": "Package-relative imports only",
+    "release_0_1_0_packaged_sha256": "4a1da69d9420b5a42bea47d1fb1861521824287803bf6943b9b018593e378c06"
+  },
+  "binomial_fit.py": {
+    "source_sha256": "fd4e825e2663aa07dc4cd823c12b169021a604c41cebbdc57fdd9852d303a82d",
+    "packaged_sha256": "fd4e825e2663aa07dc4cd823c12b169021a604c41cebbdc57fdd9852d303a82d",
+    "change": "Unchanged",
+    "release_0_1_0_packaged_sha256": "fd4e825e2663aa07dc4cd823c12b169021a604c41cebbdc57fdd9852d303a82d"
+  },
+  "repaired_binomial.py": {
+    "source_sha256": "01a16b15580e2adf122623f53aee0e1297e800af28f2833687c8f16fe9b54d63",
+    "packaged_sha256": "fac0611e6094b344334ead001b170907d0ca7d83064269089dc941a38bb1977d",
+    "change": "Package-relative imports; 0.1.1 shares the public symmetry threshold (1e-12). Solver update equations unchanged.",
+    "release_0_1_0_packaged_sha256": "b20f89bffd50938dae43bf19d2a5473b6ad4fe3b46ae30a7277d7aa9dcd83a40"
+  }
+}

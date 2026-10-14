@@ -1,0 +1,10 @@
+Place your own raw tensor file in this folder.
+
+START_HERE.txt uses my_tensor.npy as its example filename. Use your actual
+filename and correct extension when running the command. Renaming a CSV,
+spreadsheet, or sequencing file to .npy does not convert it into a tensor.
+
+Supported formats and required tensor structure are explained in START_HERE.txt
+and README.md. No measurement data is included in this folder.
+
+You may also keep your tensor elsewhere and give its full path to the command.

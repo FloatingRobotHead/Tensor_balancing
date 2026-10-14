@@ -1,0 +1,46 @@
+{
+  "release": "0.1.1",
+  "status": "passed with documented iteration-limit and platform limits",
+  "unit_test_count": 36,
+  "unit_test_log": "UNIT_TEST_LOG.txt",
+  "numerical_case_count": 28,
+  "numerical_run_count": 84,
+  "default_limit_convergences": 83,
+  "extended_limit_convergences": 1,
+  "extended_cases": [
+    {
+      "case": "lognormal_10",
+      "method": "binomial",
+      "default_limit": 5000,
+      "message": "binomial did not converge: max_rounds after 5000 iterations. No output files were written."
+    }
+  ],
+  "numerical_details": "NUMERICAL_AUDIT.json",
+  "worst_errors": {
+    "worst_max_fiber_relative_error": 6.621581061239112e-11,
+    "worst_max_plane_relative_error": 1.6533219238112906e-11,
+    "worst_reference_relative_error": 2.77774636625594e-09,
+    "worst_reconstruction_relative_error": 2.7552740089475947e-09,
+    "worst_agreement_with_dh": 2.7807898206333448e-09
+  },
+  "original_manifest_verified": {
+    "entries": 21,
+    "all_matched": true
+  },
+  "default_compatibility": "audit/DEFAULT_COMPATIBILITY.json: all three sample output arrays exactly equal for each method",
+  "installation": "Built wheel, installed it into a separate virtual environment with host NumPy/SciPy, and ran both console commands from outside the source directory; normalization, packaged HTML template, and CSV export succeeded.",
+  "visualization": "Actual embedded JavaScript rendered five native canvases; rotation and slice changes passed; exact payload checked. Full browser layout unavailable.",
+  "environment": {
+    "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+    "python": "3.12.14",
+    "numpy": "2.3.5",
+    "scipy": "1.17.0"
+  },
+  "limits": [
+    "Native Windows and macOS were not executed in this audit.",
+    "Minimum supported dependency versions were not independently installed/tested.",
+    "Historical chromosome 21 and other website comparisons in audit/ORIGINAL_VALIDATION.json were not rerun.",
+    "These are numerical/software checks, not evidence that every residual peak is a physical triple interaction.",
+    "Dense arrays require several times the size of a single cube in memory; unlimited inputs/resources were not tested."
+  ]
+}

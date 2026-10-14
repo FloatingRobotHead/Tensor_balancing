@@ -1,0 +1,165 @@
+TENSOR BALANCE CLI 0.1.1 -- USE YOUR OWN TENSOR
+
+This ZIP contains the reviewed program, a CSV exporter, an offline viewer,
+complete documentation, and the audit evidence. Python and its dependencies
+are installed separately using the commands below. Internet access is normally
+needed during installation; normalization and viewing then work offline.
+
+The commands below use YOUR file. The files under examples are optional demo
+data and reference results. The program never selects them automatically.
+
+WINDOWS: COMPLETE WORKFLOW (COMMAND PROMPT)
+
+1. Extract this ZIP into a NEW folder.
+   Open the extracted Tensor_Balance_CLI folder containing this file,
+   pyproject.toml, and tensor_balance.py. Do not run inside the ZIP or copy this
+   release over the old folder. Your existing data can stay where it is.
+
+2. Open Command Prompt in that folder.
+   In File Explorer, click the address bar, type cmd, and press Enter.
+   Enter the following commands one at a time, pressing Enter after each.
+   Wait for each command to finish before entering the next.
+
+3. Install once for this extracted folder:
+
+   python -m venv .venv
+   .venv\Scripts\python.exe -m pip install .
+   .venv\Scripts\python.exe tensor_balance.py --version
+
+   The version should be 0.1.1. A silent return to the prompt after creating
+   .venv is normal. If your Python command is py, use py -m venv .venv for the
+   first line. Python 3.10 or newer is required. No activation is necessary.
+
+4. Supply your own tensor file.
+   Copy your raw .npy tensor into the included my_data folder. For the exact
+   commands below, name that copy my_tensor.npy. Keep the original safe.
+   If your file is CSV, NPZ, JSON, or TSV, keep its correct extension and use
+   that filename in the command instead. Renaming a file does not convert it.
+   See INPUT REQUIREMENTS below if you do not yet have a supported tensor file.
+
+5. Normalize it and make a visualization:
+
+   .venv\Scripts\python.exe tensor_balance.py "my_data\my_tensor.npy" --out "results\my_tensor_run1" --visualize
+
+   This uses default DH normalization. To omit the visualization, remove
+   --visualize. The input file is unchanged. Do not create my_tensor_run1
+   yourself: the program creates it and refuses to overwrite existing folders.
+
+   You can use an existing file anywhere on your computer instead of copying
+   it into my_data. Replace the quoted input path above with its full path,
+   for example "C:\data\experiment_01.npy". Keep quotes around paths.
+
+6. Collect your results from results\my_tensor_run1:
+
+   balanced_tensor.npy   Your entire normalized remaining tensor, shape n,n,n.
+   bias_vector.npy       Linear divisor factors, shape n.
+   bias_matrix.npy       Pairwise divisor factors, shape n,n.
+   visualization.html    Optional view of this input and its actual outputs.
+
+   NPY files are binary arrays. Incomprehensible symbols in a text editor are
+   normal. Use them directly in numerical code, or export readable CSV next.
+
+7. Export every normalized tensor entry to readable CSV:
+
+   .venv\Scripts\python.exe export_csv.py "results\my_tensor_run1" --out "results\my_tensor_run1_csv"
+
+   The new folder contains bias_vector.csv, bias_matrix.csv, and
+   balanced_tensor.csv. The last file contains ALL n^3 entries in one table
+   with columns i,j,k,value. It does not omit entries or rerun normalization.
+   Very large CSV files may be too large for a spreadsheet; retain the NPYs.
+
+8. Open the visualization and the folder containing readable results:
+
+   start "" "results\my_tensor_run1\visualization.html"
+   start "" "results\my_tensor_run1_csv"
+
+   Rotate the 3D tensor by dragging; use the slice slider to inspect layers.
+   Large 3D views can be sampled for display. NPY and CSV contain the full data.
+
+9. Run another tensor using its filename and NEW output folder names.
+   For example, change my_tensor_run1 to my_tensor_run2 in both commands.
+   Use the same output path from step 5 as the input to step 7.
+   You only need to repeat installation if you use a new extracted folder.
+
+INPUT REQUIREMENTS -- WHAT COUNTS AS YOUR TENSOR?
+
+Supply an already prepared, complete, finite, nonnegative, symmetric n x n x n
+raw contact-count cube. All three axes refer to the same ordered bins. Any n
+is allowed subject to available memory. Keep your bin labels/coordinates;
+output indices follow the same order.
+
+Every cell must have a value, including measured zeros and repeated-index
+cells. Missing measurements and excluded cells are not measured zeros. The
+program does not fill missing data, infer symmetry, or apply missing-bin masks.
+Use raw values: the program adds its fixed 0.5 pseudocount once internally.
+
+Already have an NPY/NPZ tensor? Use it directly. Do not turn it into text.
+Already have a NumPy array in your data-preparation code? Save it there with:
+
+   import numpy as np
+   np.save("my_tensor.npy", raw, allow_pickle=False)
+
+Here raw must be your existing measured n x n x n array. These are Python code
+lines for your script or notebook, not Windows Command Prompt commands. The
+code saves your measurements; it does not create or substitute sample data.
+
+CSV/TSV: use columns i,j,k,value with zero-based integer coordinates. Include
+all n^3 coordinate combinations exactly once, including zero-valued cells.
+Only observed contacts, or only i <= j <= k, is not a complete input table.
+
+JSON: use a nested cube, or {"shape":[n,n,n],"raw":[...]} with actual numeric
+dimensions and values. Flat values are in C order: k changes fastest.
+See README.md section 3 for complete format examples and NPZ/ZIP conventions.
+
+FASTQ, BAM, arbitrary Excel workbooks, and sparse read/contact lists need
+upstream preparation into a supported complete tensor. Do not simply rename
+their extensions. The correct counting/binning convention depends on your data.
+
+OTHER METHODS AND INTERPRETATION
+
+DH is the default. Add --method log-anova or --method binomial if needed.
+Binomial requires the true exposure/snapshot count in NPZ/JSON metadata, or
+--snapshots followed by your actual count. Do not guess it from the maximum
+tensor value. See README.md section 4 for complete method commands.
+
+The remaining tensor has mean 1 and contains relative weights, not probabilities.
+The decomposition is of raw + 0.5. With b = bias vector, M = bias matrix,
+and R = remaining tensor:
+
+   raw[i,j,k] + 0.5 ~= b[i] b[j] b[k] M[i,j] M[i,k] M[j,k] R[i,j,k]
+
+To read results in your Python code:
+
+   import numpy as np
+   R = np.load("results/my_tensor_run1/balanced_tensor.npy", allow_pickle=False)
+
+LINUX / macOS: COMPLETE COMMAND SEQUENCE
+
+Extract the ZIP, open a terminal in the folder containing pyproject.toml, and
+put your tensor in my_data/my_tensor.npy (or substitute its actual path).
+
+   python3 -m venv .venv
+   .venv/bin/python -m pip install .
+   .venv/bin/python tensor_balance.py --version
+   .venv/bin/python tensor_balance.py "my_data/my_tensor.npy" --out "results/my_tensor_run1" --visualize
+   .venv/bin/python export_csv.py "results/my_tensor_run1" --out "results/my_tensor_run1_csv"
+
+Open results/my_tensor_run1/visualization.html in your browser and collect the
+three NPYs and exported CSVs from the corresponding results folders.
+On macOS: open "results/my_tensor_run1/visualization.html"
+On desktop Linux: xdg-open "results/my_tensor_run1/visualization.html"
+
+IF A COMMAND FAILS
+
+File not found: check the input path and filename, including its extension.
+Output already exists: use a new output folder name; do not delete your results.
+Invalid input: read the reported issue and check the input requirements above.
+Iteration limit: see README.md for --max-iterations; no failed result is saved.
+Exit codes: 0 success; 2 input/usage/output error; 3 numerical failure;
+130 interruption.
+
+README.md has the detailed reference. AUDIT_REPORT.md records fixes, tests,
+and limitations. The reviewed code passed 36 regression tests, and the audit
+covered 84 numerical runs. Native Windows execution was not part of that audit.
+The examples folder contains the bundled simulated patchwork tensor and
+reference outputs; none of the own-data commands above uses that example.

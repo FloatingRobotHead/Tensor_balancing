@@ -1,0 +1,26 @@
+[
+  {
+    "method": "dh",
+    "arrays_exactly_equal": {
+      "bias_vector": true,
+      "bias_matrix": true,
+      "balanced_tensor": true
+    }
+  },
+  {
+    "method": "log-anova",
+    "arrays_exactly_equal": {
+      "bias_vector": true,
+      "bias_matrix": true,
+      "balanced_tensor": true
+    }
+  },
+  {
+    "method": "binomial",
+    "arrays_exactly_equal": {
+      "bias_vector": true,
+      "bias_matrix": true,
+      "balanced_tensor": true
+    }
+  }
+]

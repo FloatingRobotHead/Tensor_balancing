@@ -1,0 +1,172 @@
+{
+  "status": "passed",
+  "unit_test_count": 9,
+  "reference_checks": [
+    {
+      "example": "Chromosome 21",
+      "seconds": 0.18918851998751052,
+      "reference_relative_error": 0.0,
+      "method": "dh",
+      "shape": [
+        41,
+        41,
+        41
+      ],
+      "pseudocount": 0.5,
+      "tolerance": 1e-10,
+      "rounds": 63,
+      "status": "converged",
+      "reconstruction_relative_error": 2.0761170560490213e-14,
+      "stack_excess": 2.3547894833642752e-11,
+      "plane_excess": 2.341170155489266e-12
+    },
+    {
+      "example": "Chromosome 21",
+      "seconds": 0.24294069099414628,
+      "reference_relative_error": 0.0,
+      "method": "log-anova",
+      "shape": [
+        41,
+        41,
+        41
+      ],
+      "pseudocount": 0.5,
+      "tolerance": 1e-10,
+      "rounds": 15,
+      "status": "converged",
+      "reconstruction_relative_error": 8.204548151980244e-14,
+      "stack_excess": 1.845852400467719e-13,
+      "plane_excess": 1.3182726111731526e-14
+    },
+    {
+      "example": "Chromosome 21",
+      "seconds": 1.1386180429981323,
+      "reference_relative_error": 0.0,
+      "method": "binomial",
+      "shape": [
+        41,
+        41,
+        41
+      ],
+      "pseudocount": 0.5,
+      "tolerance": 1e-10,
+      "rounds": 28,
+      "status": "converged",
+      "reconstruction_relative_error": 1.243449787580183e-14,
+      "stack_excess": 1.9820487561525788e-12,
+      "plane_excess": 2.005032401593279e-13
+    },
+    {
+      "example": "240-point A\u2013F chain",
+      "seconds": 0.03856498800450936,
+      "reference_relative_error": 0.0,
+      "method": "dh",
+      "shape": [
+        24,
+        24,
+        24
+      ],
+      "pseudocount": 0.5,
+      "tolerance": 1e-10,
+      "rounds": 42,
+      "status": "converged",
+      "reconstruction_relative_error": 2.4868995751603197e-14,
+      "stack_excess": 1.3154410431332338e-11,
+      "plane_excess": 1.1170566786389757e-12
+    },
+    {
+      "example": "240-point A\u2013F chain",
+      "seconds": 0.043942162999883294,
+      "reference_relative_error": 0.0,
+      "method": "log-anova",
+      "shape": [
+        24,
+        24,
+        24
+      ],
+      "pseudocount": 0.5,
+      "tolerance": 1e-10,
+      "rounds": 9,
+      "status": "converged",
+      "reconstruction_relative_error": 1.9539925233402566e-14,
+      "stack_excess": 1.2119934685491276e-15,
+      "plane_excess": 1.6643708016733003e-16
+    },
+    {
+      "example": "240-point A\u2013F chain",
+      "seconds": 0.0937432730133878,
+      "reference_relative_error": 0.0,
+      "method": "binomial",
+      "shape": [
+        24,
+        24,
+        24
+      ],
+      "pseudocount": 0.5,
+      "tolerance": 1e-10,
+      "rounds": 13,
+      "status": "converged",
+      "reconstruction_relative_error": 1.7763568394002662e-14,
+      "stack_excess": 6.085409953726634e-15,
+      "plane_excess": 2.4893281880267137e-16
+    },
+    {
+      "example": "Three territories",
+      "seconds": 0.008365394998691045,
+      "reference_relative_error": 0.0,
+      "method": "dh",
+      "shape": [
+        15,
+        15,
+        15
+      ],
+      "pseudocount": 0.5,
+      "tolerance": 1e-10,
+      "rounds": 35,
+      "status": "converged",
+      "reconstruction_relative_error": 8.992806499463727e-15,
+      "stack_excess": 5.2976859010920875e-12,
+      "plane_excess": 8.583257561490935e-16
+    },
+    {
+      "example": "Three territories",
+      "seconds": 0.002844684000592679,
+      "reference_relative_error": 0.0,
+      "method": "log-anova",
+      "shape": [
+        15,
+        15,
+        15
+      ],
+      "pseudocount": 0.5,
+      "tolerance": 1e-10,
+      "rounds": 3,
+      "status": "converged",
+      "reconstruction_relative_error": 5.884182030513312e-15,
+      "stack_excess": 1.202741610010586e-16,
+      "plane_excess": 2.0970879354030725e-17
+    },
+    {
+      "example": "Three territories",
+      "seconds": 0.14173898899753112,
+      "reference_relative_error": 0.0,
+      "method": "binomial",
+      "shape": [
+        15,
+        15,
+        15
+      ],
+      "pseudocount": 0.5,
+      "tolerance": 1e-10,
+      "rounds": 39,
+      "status": "converged",
+      "reconstruction_relative_error": 8.881784197001213e-15,
+      "stack_excess": 7.925932595448975e-12,
+      "plane_excess": 1.9774305649712527e-16
+    }
+  ],
+  "visualization": "Exact output payload checked; five nonblank native-canvas renders, rotation, slice control, and no script errors checked in jsdom. No full browser layout check.",
+  "unit_tests": "passed",
+  "installation": "Installed into a separate virtual environment; Unix entry point and packaged visualization template both ran successfully.",
+  "validation_environment": "Python on Linux; numerical comparisons to existing website Python references, not a new biological validation."
+}

@@ -1,0 +1,50 @@
+[
+  {
+    "case": "archive metadata is a list",
+    "exit": 1,
+    "stderr": "Traceback (most recent call last):\n  File \"<original-package>/tensor_balance.py\", line 5, in <module>\n    raise SystemExit(main())\n                     ^^^^^^\n  File \"<original-package>/tensorbalance/cli.py\", line 67, in main\n    raw, snapshots = load_input(args.input)\n                     ^^^^^^^^^^^^^^^^^^^^^^\n  File \"<original-package>/tensorbalance/input.py\", line 115, in load_input\n    return _archive(path)\n           ^^^^^^^^^^^^^^\n  File \"<original-package>/tensorbalance/input.py\", line 80, in _archive\n    snapshots = metadata.get(\"snapshots\")\n                ^^^^^^^^^^^^\nAttributeError: 'list' object has no attribute 'get'\n"
+  },
+  {
+    "case": "duplicate archive member",
+    "error_type": "ValueError",
+    "message": "Archive contains multiple raw tensors. Select one input."
+  },
+  {
+    "case": "CSV integer 2^53+1",
+    "result": "9007199254740992.0"
+  },
+  {
+    "case": "duplicate CSV value header",
+    "result": "99.0"
+  },
+  {
+    "case": "extra CSV row field",
+    "result": "10.0"
+  },
+  {
+    "case": "JSON fractional n",
+    "result": "(1, 1, 1)"
+  },
+  {
+    "case": "complex snapshot metadata",
+    "result": "100.0"
+  },
+  {
+    "case": "masked array API",
+    "result": "converged"
+  },
+  {
+    "case": "accepted symmetry tolerance, binomial",
+    "error_type": "ValueError",
+    "message": "Symmetric full-cube counts required"
+  },
+  {
+    "case": "log-anova requested tolerance 0.1",
+    "error_type": "FloatingPointError",
+    "message": "Three-factor reconstruction failed (relative error 2.41e-07)."
+  },
+  {
+    "case": "log-anova requested tolerance 0.01",
+    "result": "{'method': 'log-anova', 'shape': [15, 15, 15], 'pseudocount': 0.5, 'tolerance': 0.01, 'rounds': 5, 'status': 'converged', 'reconstruction_relative_error': 7.286997698490466e-09, 'stack_excess': 1.375253978568346e-08, 'plane_excess': 6.487724816828046e-10}"
+  }
+]
