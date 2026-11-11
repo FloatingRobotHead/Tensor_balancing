@@ -12,7 +12,7 @@ from unittest.mock import patch
 import warnings
 import zipfile
 import numpy as np
-from tensorbalance import balance
+from tensorbalance import balance, unit_fiber_result
 from tensorbalance.cli import main, write_result, OUTPUTS
 from tensorbalance.decompose import ConvergenceError
 from tensorbalance.input import load_input
@@ -155,7 +155,7 @@ class AuditTests(unittest.TestCase):
                 out=self.root/f'result-{count}'
                 run=self.cli(p,'--out',out)
                 self.assertEqual(run.returncode,0,run.stderr)
-                self.assertEqual(len(list(out.iterdir())),3)
+                self.assertEqual(len(list(out.iterdir())),4)
 
     def test_api_rejects_mask_bool_and_bad_controls(self):
         for x in [np.ma.array(self.raw,mask=True),np.ones((2,2,2),dtype=bool), [[[True]]], [[[2**53+1]]]]:
@@ -231,7 +231,7 @@ class AuditTests(unittest.TestCase):
         for job in jobs:job.communicate(timeout=30)
         self.assertEqual(sorted(job.returncode for job in jobs),[0,2])
         self.assertEqual(sorted(p.name for p in out.iterdir()),sorted(OUTPUTS))
-        np.testing.assert_allclose(np.load(out/'balanced_tensor.npy'),balance(self.raw).balanced_tensor,rtol=0,atol=0)
+        np.testing.assert_allclose(np.load(out/'balanced_tensor.npy'),balance(self.raw).balanced_tensor/len(self.raw),rtol=0,atol=0)
 
     def test_spaces_unicode_and_module_entry(self):
         p=self.root/'tensor data é.npy';np.save(p,self.raw)
@@ -240,7 +240,7 @@ class AuditTests(unittest.TestCase):
         self.assertEqual(run.returncode,0,run.stderr)
         self.assertIn('Tensor Balance',(out/'visualization.html').read_text(encoding='utf-8'))
         run=subprocess.run([sys.executable,'-m','tensorbalance','--version'],cwd=ROOT,capture_output=True,text=True)
-        self.assertEqual(run.returncode,0);self.assertIn('0.1.1',run.stdout)
+        self.assertEqual(run.returncode,0);self.assertIn('0.2.0',run.stdout)
 
     def test_memory_and_interrupt_errors_are_clean(self):
         for error,expected in ((MemoryError(),2),(KeyboardInterrupt(),130)):
@@ -249,7 +249,7 @@ class AuditTests(unittest.TestCase):
         self.assertFalse((self.root/'raw_balanced').exists())
 
     def test_complete_csv_export_roundtrip(self):
-        result=balance(self.raw)
+        result=unit_fiber_result(balance(self.raw))
         source=write_result(self.root/'result',result,self.raw)
         dest=export_csv(source,self.root/'csv')
         b=np.loadtxt(dest/'bias_vector.csv',delimiter=',',skiprows=1)[:,1]

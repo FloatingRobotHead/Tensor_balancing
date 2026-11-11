@@ -9,7 +9,7 @@ import sys
 import time
 import numpy as np
 import scipy
-from tensorbalance import balance, __version__
+from tensorbalance import balance, unit_fiber_result, __version__
 from tensorbalance.decompose import ConvergenceError
 
 
@@ -70,7 +70,17 @@ def audit():
             agreement=max(float(np.max(np.abs(a/b-1))) for a,b in
                           ((r.bias_vector,dh.bias_vector),(r.bias_matrix,dh.bias_matrix),(w,dh.balanced_tensor)))
             assert agreement<1e-8
-            entry=dict(case=name,method=method,status='passed',shape=list(raw.shape),
+            exported=unit_fiber_result(r)
+            eb,em,et=exported.bias_vector,exported.bias_matrix,exported.balanced_tensor
+            export_fiber=max(float(np.max(np.abs(et.sum(axis)-1))) for axis in range(3))
+            export_rebuilt=exported.reconstruction_scalar*et*eb[:,None,None]*eb[None,:,None]*eb[None,None,:]*em[:,:,None]*em[:,None,:]*em[None,:,:]
+            export_reconstruction=float(np.max(np.abs(export_rebuilt/(raw+.5)-1)))
+            assert export_fiber<1e-10 and export_reconstruction<1e-8
+            assert abs(float(np.log(eb).mean()))<1e-12
+            np.testing.assert_allclose(et,expected/len(raw),rtol=1e-8)
+            entry=dict(four_factor_fiber_error=export_fiber,
+                       four_factor_reconstruction_error=export_reconstruction,reconstruction_scalar=exported.reconstruction_scalar,
+                       case=name,method=method,status='passed',shape=list(raw.shape),
                        max_iterations=limit,rounds=r.diagnostics['rounds'],reference_rounds=steps,
                        max_fiber_relative_error=fiber,max_plane_relative_error=plane,
                        reference_relative_error=ref_error,reconstruction_relative_error=reconstruction,

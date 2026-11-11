@@ -1,13 +1,14 @@
 """Export existing results to readable CSV without rerunning normalization."""
 import argparse
 import csv
+import shutil
 from pathlib import Path
 import sys
 import numpy as np
 from .storage import write_directory
-from .input import load_npy
+from .input import load_npy, load_reconstruction_scalar
 
-OUTPUTS = ("bias_vector.csv", "bias_matrix.csv", "balanced_tensor.csv")
+OUTPUTS = ("bias_vector.csv", "bias_matrix.csv", "balanced_tensor.csv", "reconstruction_scalar.csv")
 
 
 def export_csv(source, destination):
@@ -19,7 +20,17 @@ def export_csv(source, destination):
     if any(a.dtype.kind not in "uif" or not np.isfinite(a).all() or (a <= 0).any() for a in (b, m, r)):
         raise ValueError("Result arrays must contain finite, positive, real values.")
 
+    overall = load_reconstruction_scalar(source)
+
     def write(stage):
+        if overall is not None:
+            with (stage / "reconstruction_scalar.csv").open("w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow(["reconstruction_scalar"])
+                writer.writerow([format(float(overall), ".17g")])
+        for name in ("metadata.json", "bins.csv"):
+            if (source / name).is_file():
+                shutil.copyfile(source / name, stage / name)
         with (stage / OUTPUTS[0]).open("w", newline="", encoding="utf-8") as f:
             out = csv.writer(f)
             out.writerow(("i", "value"))
@@ -40,8 +51,8 @@ def export_csv(source, destination):
 
 
 def main(argv=None):
-    p = argparse.ArgumentParser(description="Export the three result arrays as CSV; the whole tensor goes into one coordinate table.")
-    p.add_argument("results", type=Path, help="directory containing the three NPY outputs")
+    p = argparse.ArgumentParser(description="Export numerical result factors as CSV; the whole tensor goes into one coordinate table.")
+    p.add_argument("results", type=Path, help="directory containing the numerical NPY outputs")
     p.add_argument("--out", type=Path, help="new CSV directory (default: RESULTS_csv)")
     args = p.parse_args(argv)
     try:
@@ -49,7 +60,8 @@ def main(argv=None):
         destination = args.out or source.with_name(source.name + "_csv")
         out = export_csv(source, destination)
         for name in OUTPUTS:
-            print(out / name)
+            if (out / name).exists():
+                print(out / name)
         return 0
     except (ValueError, OSError, TypeError, EOFError, MemoryError) as exc:
         print(f"tensor-export-csv: {exc}", file=sys.stderr)

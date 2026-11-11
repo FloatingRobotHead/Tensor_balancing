@@ -1,5 +1,5 @@
-"""The three-output wrapper; the existing solver equations are unchanged."""
-from dataclasses import dataclass
+"""Tensor decomposition and conversion to unit-fiber output factors."""
+from dataclasses import dataclass, replace
 import numpy as np
 from .solvers import dh_sqrt
 from .checks import MAX_EXACT_INTEGER, SYMMETRY_RTOL, check_python_integers, positive_integer, scalar
@@ -14,6 +14,12 @@ class Result:
     balanced_tensor: np.ndarray
     diagnostics: dict
     history: list
+    reconstruction_scalar: float | None = None
+
+    @property
+    def scalar(self):
+        """Compatibility alias for the early 0.2.0 development API."""
+        return self.reconstruction_scalar
 
 
 class ConvergenceError(RuntimeError):
@@ -37,7 +43,7 @@ def validate(raw):
     # One shared vector and one shared matrix require interchangeable axes.
     for axes in [(1, 0, 2), (0, 2, 1)]:
         if not np.allclose(x, x.transpose(axes), rtol=SYMMETRY_RTOL, atol=0):
-            raise ValueError("The three-output interface requires a permutation-symmetric tensor. "
+            raise ValueError("The shared-factor interface requires a permutation-symmetric tensor. "
                              "An asymmetric tensor needs separate factors for each axis and pair; "
                              "this tool does not silently symmetrize data.")
     return x
@@ -130,3 +136,34 @@ def balance(raw, *, method="dh", snapshots=None, tolerance=1e-10, max_iterations
                   tolerance=tolerance, solver_tolerance=solver_tolerance, snapshots=snapshots,
                   rounds=int(info["rounds"]), status="converged",
                   reconstruction_relative_error=error, **scores), history)
+
+
+def separate_scale(bias_vector):
+    """Center a mean-one-residual divisor vector and return the reconstruction scalar."""
+    b = np.asarray(bias_vector, dtype=float)
+    if b.ndim != 1 or not b.size or not np.isfinite(b).all() or np.any(b <= 0):
+        raise ValueError("Bias vector must be a nonempty positive finite vector.")
+    logs = np.log(b)
+    center = float(logs.mean())
+    with np.errstate(over="raise", invalid="raise", under="ignore"):
+        vector = np.exp(logs - center)
+        overall = float(np.exp(np.log(b.size) + 3 * center))
+    if overall <= 0 or np.any(vector <= 0):
+        raise ValueError("Scalar or vector underflowed during factor separation.")
+    return vector, overall
+
+
+def unit_fiber_result(result):
+    """Convert the internal mean-one result to four reconstructing output factors.
+
+    raw + pseudocount = reconstruction_scalar * b_i*b_j*b_k * M_ij*M_ik*M_jk * T_ijk.
+    T has unit fiber sums; b has geometric mean one.
+    """
+    if result.reconstruction_scalar is not None:
+        return result
+    n = result.bias_vector.size
+    vector, overall = separate_scale(result.bias_vector)
+    return replace(result, bias_vector=vector, balanced_tensor=result.balanced_tensor / n,
+                   reconstruction_scalar=overall, diagnostics=dict(result.diagnostics, fiber_sum_target=1.0,
+                   tensor_mean_target=1.0/n, mean_one_to_unit_fiber_multiplier=1.0/n,
+                   output_convention="unit-fibers-v1"))

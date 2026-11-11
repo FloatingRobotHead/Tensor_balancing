@@ -1,4 +1,4 @@
-TENSOR BALANCE CLI 0.1.1 -- USE YOUR OWN TENSOR
+TENSOR BALANCE CLI 0.2.0 -- USE YOUR OWN TENSOR
 
 This ZIP contains the reviewed program, a CSV exporter, an offline viewer,
 complete documentation, and the audit evidence. Python and its dependencies
@@ -26,7 +26,7 @@ WINDOWS: COMPLETE WORKFLOW (COMMAND PROMPT)
    .venv\Scripts\python.exe -m pip install .
    .venv\Scripts\python.exe tensor_balance.py --version
 
-   The version should be 0.1.1. A silent return to the prompt after creating
+   The version should be 0.2.0. A silent return to the prompt after creating
    .venv is normal. If your Python command is py, use py -m venv .venv for the
    first line. Python 3.10 or newer is required. No activation is necessary.
 
@@ -37,12 +37,12 @@ WINDOWS: COMPLETE WORKFLOW (COMMAND PROMPT)
    that filename in the command instead. Renaming a file does not convert it.
    See INPUT REQUIREMENTS below if you do not yet have a supported tensor file.
 
-5. Normalize it and make a visualization:
+5. Normalize it and save the numerical factors:
 
-   .venv\Scripts\python.exe tensor_balance.py "my_data\my_tensor.npy" --out "results\my_tensor_run1" --visualize
+   .venv\Scripts\python.exe tensor_balance.py "my_data\my_tensor.npy" --out "results\my_tensor_run1"
 
-   This uses default DH normalization. To omit the visualization, remove
-   --visualize. The input file is unchanged. Do not create my_tensor_run1
+   This uses default DH normalization. An optional visualization can be
+   requested by adding --visualize. The input file is unchanged. Do not create my_tensor_run1
    yourself: the program creates it and refuses to overwrite existing folders.
 
    You can use an existing file anywhere on your computer instead of copying
@@ -54,6 +54,7 @@ WINDOWS: COMPLETE WORKFLOW (COMMAND PROMPT)
    balanced_tensor.npy   Your entire normalized remaining tensor, shape n,n,n.
    bias_vector.npy       Linear divisor factors, shape n.
    bias_matrix.npy       Pairwise divisor factors, shape n,n.
+   reconstruction_scalar.npy  Overall reconstruction scale, one float64 number.
    visualization.html    Optional view of this input and its actual outputs.
 
    NPY files are binary arrays. Incomprehensible symbols in a text editor are
@@ -63,12 +64,12 @@ WINDOWS: COMPLETE WORKFLOW (COMMAND PROMPT)
 
    .venv\Scripts\python.exe export_csv.py "results\my_tensor_run1" --out "results\my_tensor_run1_csv"
 
-   The new folder contains bias_vector.csv, bias_matrix.csv, and
+   The new folder contains reconstruction_scalar.csv, bias_vector.csv, bias_matrix.csv, and
    balanced_tensor.csv. The last file contains ALL n^3 entries in one table
    with columns i,j,k,value. It does not omit entries or rerun normalization.
    Very large CSV files may be too large for a spreadsheet; retain the NPYs.
 
-8. Open the visualization and the folder containing readable results:
+8. If you requested --visualize, open its optional view:
 
    start "" "results\my_tensor_run1\visualization.html"
    start "" "results\my_tensor_run1_csv"
@@ -122,16 +123,39 @@ Binomial requires the true exposure/snapshot count in NPZ/JSON metadata, or
 --snapshots followed by your actual count. Do not guess it from the maximum
 tensor value. See README.md section 4 for complete method commands.
 
-The remaining tensor has mean 1 and contains relative weights, not probabilities.
+The remaining tensor has fiber sums 1 and mean 1/n. Its total is n*n.
 The decomposition is of raw + 0.5. With b = bias vector, M = bias matrix,
-and R = remaining tensor:
+C = reconstruction scalar, and R = remaining tensor:
 
-   raw[i,j,k] + 0.5 ~= b[i] b[j] b[k] M[i,j] M[i,k] M[j,k] R[i,j,k]
+   raw[i,j,k] + 0.5 ~= C b[i] b[j] b[k] M[i,j] M[i,k] M[j,k] R[i,j,k]
 
 To read results in your Python code:
 
    import numpy as np
    R = np.load("results/my_tensor_run1/balanced_tensor.npy", allow_pickle=False)
+   C = float(np.load("results/my_tensor_run1/reconstruction_scalar.npy", allow_pickle=False))
+
+The saved tensor ALREADY has fibers summing to one. The multiplier 1/n was
+applied during export. reconstruction_scalar.npy restores the input scale when
+you reconstruct counts; do not use it to normalize the tensor again.
+
+PARQUET SEGMENT RECORDS -- CHOOSE YOUR RESOLUTION
+
+Install the extra Parquet dependency in your environment:
+
+   python -m pip install ".[parquet]"
+
+Use the environment's Python. On Linux with the environment activated:
+
+   tensor-balance lcl_chr21.parquet --bin-size 25000 --chromosome chr21 --unobserved-are-zero --out results/chr21_25kb
+
+25000 means 25 kb. Change it to your chosen bin width in base pairs.
+The supported schema and counting assumptions are in README.md. The flag
+--unobserved-are-zero explicitly treats absent combinations as zero counts.
+If the input already contains bins, omit --bin-size to keep those bins.
+The chromosome data is supplied by you, and is not included in this package.
+A 1,868-bin tensor needs about 52.15 GB of disk for the tensor alone.
+On Voltron, run large jobs on an allocated compute node.
 
 LINUX / macOS: COMPLETE COMMAND SEQUENCE
 
@@ -141,11 +165,11 @@ put your tensor in my_data/my_tensor.npy (or substitute its actual path).
    python3 -m venv .venv
    .venv/bin/python -m pip install .
    .venv/bin/python tensor_balance.py --version
-   .venv/bin/python tensor_balance.py "my_data/my_tensor.npy" --out "results/my_tensor_run1" --visualize
+   .venv/bin/python tensor_balance.py "my_data/my_tensor.npy" --out "results/my_tensor_run1"
    .venv/bin/python export_csv.py "results/my_tensor_run1" --out "results/my_tensor_run1_csv"
 
-Open results/my_tensor_run1/visualization.html in your browser and collect the
-three NPYs and exported CSVs from the corresponding results folders.
+Collect the four NPYs and exported CSVs from the corresponding results folders.
+If you requested --visualize, open results/my_tensor_run1/visualization.html.
 On macOS: open "results/my_tensor_run1/visualization.html"
 On desktop Linux: xdg-open "results/my_tensor_run1/visualization.html"
 
@@ -158,8 +182,8 @@ Iteration limit: see README.md for --max-iterations; no failed result is saved.
 Exit codes: 0 success; 2 input/usage/output error; 3 numerical failure;
 130 interruption.
 
-README.md has the detailed reference. AUDIT_REPORT.md records fixes, tests,
-and limitations. The reviewed code passed 36 regression tests, and the audit
-covered 84 numerical runs. Native Windows execution was not part of that audit.
+README.md has the detailed reference. RELEASE_NOTES.md and audit/v0.2.0/
+record current checks. AUDIT_REPORT.md retains the historical 0.1.1 audit.
+Native Windows execution has not been tested for this release.
 The examples folder contains the bundled simulated patchwork tensor and
 reference outputs; none of the own-data commands above uses that example.

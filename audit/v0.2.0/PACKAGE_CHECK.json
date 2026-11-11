@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "version": "0.2.0",
+  "checks": [
+    "archive contents",
+    "isolated installed import",
+    "binned input CLI",
+    "all unit fiber sums",
+    "four-factor reconstruction",
+    "CSV export",
+    "raw Parquet CLI",
+    "explicit scalar and normalization multiplier"
+  ],
+  "installation": "Wheel installed into a separate target directory and imported from outside the source checkout.",
+  "platform": "Linux"
+}

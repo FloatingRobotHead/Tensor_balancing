@@ -4,15 +4,24 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tensor-balance-cli"
-version = "0.1.1"
-description = "Split a symmetric contact tensor into a bias vector, bias matrix, and balanced residual tensor."
+version = "0.2.0"
+description = "Split a symmetric contact tensor into a reconstruction scalar, bias vector, bias matrix, and unit-fiber residual tensor."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = ["numpy>=1.24", "scipy>=1.12"]
 
+[project.optional-dependencies]
+parquet = ["pyarrow>=14"]
+
+[project.urls]
+Repository = "https://github.com/FloatingRobotHead/Tensor_balancing"
+Issues = "https://github.com/FloatingRobotHead/Tensor_balancing/issues"
+
 [project.scripts]
 tensor-balance = "tensorbalance.cli:main"
 tensor-export-csv = "tensorbalance.export_csv:main"
+tensor-parquet = "tensorbalance.parquet_pipeline:main"
+tensor-export-dense = "tensorbalance.export_dense:main"
 
 [tool.setuptools.packages.find]
 include = ["tensorbalance*"]

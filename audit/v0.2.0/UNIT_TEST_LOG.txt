@@ -1,0 +1,142 @@
+test_all_documented_input_formats_run (test_audit.AuditTests.test_all_documented_input_formats_run) ... ok
+test_api_rejects_mask_bool_and_bad_controls (test_audit.AuditTests.test_api_rejects_mask_bool_and_bad_controls) ... ok
+test_bad_export_input_and_scalar_export (test_audit.AuditTests.test_bad_export_input_and_scalar_export) ... ok
+test_complete_csv_export_roundtrip (test_audit.AuditTests.test_complete_csv_export_roundtrip) ... ok
+test_concurrent_jobs_do_not_overwrite (test_audit.AuditTests.test_concurrent_jobs_do_not_overwrite) ... ok
+test_csv_rejects_malformed_fields (test_audit.AuditTests.test_csv_rejects_malformed_fields) ... ok
+test_directory_inputs_fail_cleanly (test_audit.AuditTests.test_directory_inputs_fail_cleanly) ... ok
+test_disguised_npz_is_clean_error (test_audit.AuditTests.test_disguised_npz_is_clean_error) ... ok
+test_duplicate_archive_members_and_embedded_masks (test_audit.AuditTests.test_duplicate_archive_members_and_embedded_masks) ... ok
+test_exact_integer_limits_across_formats (test_audit.AuditTests.test_exact_integer_limits_across_formats) ... ok
+test_exposure_integer_precision (test_audit.AuditTests.test_exposure_integer_precision) ... ok
+test_failed_write_rolls_back (test_audit.AuditTests.test_failed_write_rolls_back) ... ok
+test_failure_cleanup_preserves_foreign_files (test_audit.AuditTests.test_failure_cleanup_preserves_foreign_files) ... ok
+test_json_dimensions_and_duplicate_keys (test_audit.AuditTests.test_json_dimensions_and_duplicate_keys) ... ok
+test_known_pair_only_and_triple_only_controls (test_audit.AuditTests.test_known_pair_only_and_triple_only_controls) ... ok
+test_loose_tolerance_still_reconstructs (test_audit.AuditTests.test_loose_tolerance_still_reconstructs) ... ok
+test_malformed_metadata_is_clean_error (test_audit.AuditTests.test_malformed_metadata_is_clean_error) ... ok
+test_memory_and_interrupt_errors_are_clean (test_audit.AuditTests.test_memory_and_interrupt_errors_are_clean) ... ok
+test_nested_json_and_text_archives (test_audit.AuditTests.test_nested_json_and_text_archives) ... ok
+test_nested_solver_failure_is_clean (test_audit.AuditTests.test_nested_solver_failure_is_clean) ... ok
+test_nonfinite_success_is_rejected (test_audit.AuditTests.test_nonfinite_success_is_rejected) ... ok
+test_output_path_errors_are_clean (test_audit.AuditTests.test_output_path_errors_are_clean) ... ok
+test_permutation_scaling_and_three_way_contrasts (test_audit.AuditTests.test_permutation_scaling_and_three_way_contrasts) ... ok
+test_saved_session_and_table_variants (test_audit.AuditTests.test_saved_session_and_table_variants) ... ok
+test_scalar_exposure_types (test_audit.AuditTests.test_scalar_exposure_types) ... ok
+test_spaces_unicode_and_module_entry (test_audit.AuditTests.test_spaces_unicode_and_module_entry) ... ok
+test_symmetry_threshold_agrees_between_methods (test_audit.AuditTests.test_symmetry_threshold_agrees_between_methods) ... ok
+test_ambiguous_missing_and_unsafe_arrays (test_cli.InterfaceTests.test_ambiguous_missing_and_unsafe_arrays) ... ok
+test_corrupt_archive_is_a_clean_failure (test_cli.InterfaceTests.test_corrupt_archive_is_a_clean_failure) ... ok
+test_failure_writes_no_results (test_cli.InterfaceTests.test_failure_writes_no_results) ... ok
+test_input_formats_and_zip (test_cli.InterfaceTests.test_input_formats_and_zip) ... ok
+test_one_input_four_outputs_and_no_overwrite (test_cli.InterfaceTests.test_one_input_four_outputs_and_no_overwrite) ... ok
+test_optional_view_has_exact_outputs (test_cli.InterfaceTests.test_optional_view_has_exact_outputs) ... ok
+test_invalid_tensor_and_settings (test_cli.NumericalTests.test_invalid_tensor_and_settings) ... ok
+test_known_factors_all_methods (test_cli.NumericalTests.test_known_factors_all_methods) ... ok
+test_uniform_and_zero (test_cli.NumericalTests.test_uniform_and_zero) ... ok
+test_dense_equivalence_and_reconstruction (test_parquet_pipeline.CompactTests.test_dense_equivalence_and_reconstruction) ... ok
+test_empty_counts_and_failed_convergence (test_parquet_pipeline.CompactTests.test_empty_counts_and_failed_convergence) ... ok
+test_parquet_entry_point_and_counting (test_parquet_pipeline.CompactTests.test_parquet_entry_point_and_counting) ... tensor-parquet: Confirm the counting convention with --unobserved-are-zero before preparing the complete cube.
+Reading Parquet and counting midpoint triplets...
+3 rows; 2 bins; 8 complete tensor values; 0.00 GB as dense float64.
+DH iteration 1: fiber spread 0.0713
+DH iteration 10: fiber spread 0.000626
+DH iteration 20: fiber spread 8.08e-05
+DH iteration 30: fiber spread 1.04e-05
+DH iteration 40: fiber spread 1.35e-06
+DH iteration 50: fiber spread 1.74e-07
+DH iteration 60: fiber spread 2.24e-08
+DH iteration 70: fiber spread 2.89e-09
+DH iteration 80: fiber spread 3.73e-10
+Exported slab 1/2
+/tmp/tmpmyqao2x7/result
+Exported slab 1/2
+tensor-parquet: Output already exists. Choose a new --out directory.
+ok
+test_binned_metadata_formats_and_resolutions (test_resolution.ResolutionTests.test_binned_metadata_formats_and_resolutions) ... dh: converged in 3 iterations (0.01 s)
+raw + 0.5; exported fiber sums 1; fiber spread 0; reconstruction error 0
+tensor-balance: This input is already binned. Omit --bin-size to preserve its existing resolution.
+dh: converged in 3 iterations (0.01 s)
+raw + 0.5; exported fiber sums 1; fiber spread 0; reconstruction error 0
+tensor-balance: This input is already binned. Omit --bin-size to preserve its existing resolution.
+dh: converged in 3 iterations (0.01 s)
+raw + 0.5; exported fiber sums 1; fiber spread 0; reconstruction error 0
+tensor-balance: This input is already binned. Omit --bin-size to preserve its existing resolution.
+dh: converged in 3 iterations (0.01 s)
+raw + 0.5; exported fiber sums 1; fiber spread 0; reconstruction error 0
+tensor-balance: This input is already binned. Omit --bin-size to preserve its existing resolution.
+dh: converged in 3 iterations (0.01 s)
+raw + 0.5; exported fiber sums 1; fiber spread 0; reconstruction error 0
+tensor-balance: This input is already binned. Omit --bin-size to preserve its existing resolution.
+dh: converged in 3 iterations (0.01 s)
+raw + 0.5; exported fiber sums 1; fiber spread 0; reconstruction error 0
+tensor-balance: This input is already binned. Omit --bin-size to preserve its existing resolution.
+ok
+test_binned_parquet_preserved_and_incomplete_rejected (test_resolution.ResolutionTests.test_binned_parquet_preserved_and_incomplete_rejected) ... dh: converged in 3 iterations (0.01 s)
+raw + 0.5; exported fiber sums 1; fiber spread 0; reconstruction error 0
+tensor-balance: This input is already binned. Omit --bin-size to preserve its existing resolution.
+ok
+test_segment_parquet_requires_choice_and_changes_binning (test_resolution.ResolutionTests.test_segment_parquet_requires_choice_and_changes_binning) ... tensor-balance: Segment-record Parquet requires --bin-size (e.g. 25000) and --chromosome (e.g. chr21).
+Reading Parquet and counting midpoint triplets...
+2 rows; 2 bins; 8 complete tensor values; 0.00 GB as dense float64.
+DH iteration 1: fiber spread 0.25
+DH iteration 10: fiber spread 0.000326
+DH iteration 20: fiber spread 3.18e-07
+DH iteration 30: fiber spread 3.1e-10
+Exported slab 1/2
+/tmp/tmpg1q26afc/result_25000
+Reading Parquet and counting midpoint triplets...
+2 rows; 1 bins; 1 complete tensor values; 0.00 GB as dense float64.
+DH iteration 1: fiber spread 0
+Exported slab 1/1
+/tmp/tmpg1q26afc/result_1000000
+ok
+test_sidecar_unknown_resolution_and_conflicts (test_resolution.ResolutionTests.test_sidecar_unknown_resolution_and_conflicts) ... ok
+test_dense_expansion_accepts_legacy_and_new_compact (test_scalar_output.ScalarOutputTests.test_dense_expansion_accepts_legacy_and_new_compact) ... /tmp/tmpbxii9d6x/raw_25000.json_result/bias_vector.npy
+/tmp/tmpbxii9d6x/raw_25000.json_result/bias_matrix.npy
+/tmp/tmpbxii9d6x/raw_25000.json_result/balanced_tensor.npy
+/tmp/tmpbxii9d6x/raw_25000.json_result/reconstruction_scalar.npy
+/tmp/tmpbxii9d6x/raw_25000.json_result/metadata.json
+/tmp/tmpbxii9d6x/raw_25000.npz_result/bias_vector.npy
+/tmp/tmpbxii9d6x/raw_25000.npz_result/bias_matrix.npy
+/tmp/tmpbxii9d6x/raw_25000.npz_result/balanced_tensor.npy
+/tmp/tmpbxii9d6x/raw_25000.npz_result/reconstruction_scalar.npy
+/tmp/tmpbxii9d6x/raw_25000.npz_result/metadata.json
+/tmp/tmpbxii9d6x/raw_25000.zip_result/bias_vector.npy
+/tmp/tmpbxii9d6x/raw_25000.zip_result/bias_matrix.npy
+/tmp/tmpbxii9d6x/raw_25000.zip_result/balanced_tensor.npy
+/tmp/tmpbxii9d6x/raw_25000.zip_result/reconstruction_scalar.npy
+/tmp/tmpbxii9d6x/raw_25000.zip_result/metadata.json
+/tmp/tmpbxii9d6x/raw_1000000.json_result/bias_vector.npy
+/tmp/tmpbxii9d6x/raw_1000000.json_result/bias_matrix.npy
+/tmp/tmpbxii9d6x/raw_1000000.json_result/balanced_tensor.npy
+/tmp/tmpbxii9d6x/raw_1000000.json_result/reconstruction_scalar.npy
+/tmp/tmpbxii9d6x/raw_1000000.json_result/metadata.json
+/tmp/tmpbxii9d6x/raw_1000000.npz_result/bias_vector.npy
+/tmp/tmpbxii9d6x/raw_1000000.npz_result/bias_matrix.npy
+/tmp/tmpbxii9d6x/raw_1000000.npz_result/balanced_tensor.npy
+/tmp/tmpbxii9d6x/raw_1000000.npz_result/reconstruction_scalar.npy
+/tmp/tmpbxii9d6x/raw_1000000.npz_result/metadata.json
+/tmp/tmpbxii9d6x/raw_1000000.zip_result/bias_vector.npy
+/tmp/tmpbxii9d6x/raw_1000000.zip_result/bias_matrix.npy
+/tmp/tmpbxii9d6x/raw_1000000.zip_result/balanced_tensor.npy
+/tmp/tmpbxii9d6x/raw_1000000.zip_result/reconstruction_scalar.npy
+/tmp/tmpbxii9d6x/raw_1000000.zip_result/metadata.json
+/tmp/tmpwxdyjjqj/binned_result/bias_vector.npy
+/tmp/tmpwxdyjjqj/binned_result/bias_matrix.npy
+/tmp/tmpwxdyjjqj/binned_result/balanced_tensor.npy
+/tmp/tmpwxdyjjqj/binned_result/reconstruction_scalar.npy
+/tmp/tmpwxdyjjqj/binned_result/metadata.json
+/tmp/tmpg1q26afc/result_25000
+/tmp/tmpg1q26afc/result_1000000
+Exported slab 1/2
+Exported slab 1/2
+Exported slab 1/2
+ok
+test_four_factors_reconstruct_and_unit_fibers_all_methods (test_scalar_output.ScalarOutputTests.test_four_factors_reconstruct_and_unit_fibers_all_methods) ... ok
+test_saved_files_and_csv_scalar (test_scalar_output.ScalarOutputTests.test_saved_files_and_csv_scalar) ... ok
+
+----------------------------------------------------------------------
+Ran 46 tests in 14.619s
+
+OK

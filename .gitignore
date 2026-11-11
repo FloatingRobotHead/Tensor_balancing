@@ -6,3 +6,8 @@ build/
 dist/
 results/
 *_balanced/
+
+# Local research inputs and download logs
+/lcl*.parquet
+/lcl*.tsv.gz
+/wget-log*

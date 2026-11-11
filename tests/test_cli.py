@@ -79,14 +79,14 @@ class InterfaceTests(unittest.TestCase):
         return subprocess.run([sys.executable, str(ROOT / "tensor_balance.py"), *map(str, args)],
                               text=True, capture_output=True)
 
-    def test_one_input_three_outputs_and_no_overwrite(self):
+    def test_one_input_four_outputs_and_no_overwrite(self):
         run = self.run_cli(self.input)
         self.assertEqual(run.returncode, 0, run.stderr)
         out = self.root / "raw_balanced"
         self.assertEqual(sorted(p.name for p in out.iterdir()), sorted(OUTPUTS))
-        self.assertEqual(len(run.stdout.splitlines()), 3)
-        b, m, r = [np.load(out / name) for name in OUTPUTS]
-        reconstructed = b[:, None, None] * b[None, :, None] * b[None, None, :] * m[:, :, None] * m[:, None, :] * m[None, :, :] * r - .5
+        self.assertEqual(len(run.stdout.splitlines()), 4)
+        b, m, r, scalar = [np.load(out / name) for name in OUTPUTS]
+        reconstructed = scalar * b[:, None, None] * b[None, :, None] * b[None, None, :] * m[:, :, None] * m[:, None, :] * m[None, :, :] * r - .5
         np.testing.assert_allclose(reconstructed, self.raw, rtol=1e-12)
         before = (out / "bias_vector.npy").read_bytes()
         run = self.run_cli(self.input)
@@ -108,7 +108,7 @@ class InterfaceTests(unittest.TestCase):
         out = self.root / "view"
         run = self.run_cli(self.input, "--out", out, "--visualize")
         self.assertEqual(run.returncode, 0, run.stderr)
-        self.assertEqual(len(list(out.iterdir())), 4)
+        self.assertEqual(len(list(out.iterdir())), 5)
         html = (out / "visualization.html").read_text()
         data = json.loads(re.search(r'<script id="tensor-data" type="application/json">(.*?)</script>', html, re.S).group(1))
         np.testing.assert_array_equal(data["tensor"], np.load(out / "balanced_tensor.npy").ravel())

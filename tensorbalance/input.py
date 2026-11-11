@@ -21,6 +21,25 @@ def load_npy(source):
     return value
 
 
+def load_reconstruction_scalar(source):
+    """Read the explicit scalar name, accepting the early development filename.
+
+    Reject conflicting aliases so compact results cannot silently change scale.
+    None denotes a legacy three-factor result.
+    """
+    values = []
+    for name in ("reconstruction_scalar.npy", "scalar.npy"):
+        path = Path(source) / name
+        if path.is_file():
+            value = load_npy(path)
+            if value.shape != () or value.dtype.kind not in "uif" or not np.isfinite(value) or value <= 0:
+                raise ValueError(f"{name} must contain one positive finite scalar.")
+            values.append(float(value))
+    if len(values) == 2 and values[0] != values[1]:
+        raise ValueError("Conflicting reconstruction_scalar.npy and legacy scalar.npy.")
+    return values[0] if values else None
+
+
 def _decimal_float(text):
     try:
         value = Decimal(text)
@@ -64,7 +83,7 @@ def _snapshots(value):
     return None if value is None else scalar(value, "Snapshot count")
 
 
-def _json(payload):
+def _json(payload, metadata=None):
     # Parse integer and decimal tokens before NumPy can silently round them.
     obj = json.loads(payload, object_pairs_hook=_pairs, parse_float=_decimal_float)
     if isinstance(obj, list):
@@ -92,6 +111,7 @@ def _json(payload):
         x = x.reshape(shape, order="C")
     if "n" in obj and x.shape != (n,) * 3:
         raise ValueError("JSON n does not match its tensor dimensions.")
+    _copy_coordinates(obj, metadata)
     return x, _snapshots(obj.get("snapshots"))
 
 
@@ -128,7 +148,7 @@ def _table(text):
     return x, None
 
 
-def _archive_contents(z):
+def _archive_contents(z, coordinates=None):
     names = [n for n in z.namelist() if not n.endswith("/") and not n.startswith("__MACOSX/")]
     if len(names) != len(set(names)):
         raise ValueError("Archive contains duplicate member names.")
@@ -155,6 +175,11 @@ def _archive_contents(z):
         prefix = name.rsplit("/", 1)[0] + "/" if "/" in name else ""
         meta_name = prefix + "metadata.json"
         metadata = _metadata(_loads(z.read(meta_name)), "metadata.json") if meta_name in names else {}
+        _copy_coordinates(metadata, coordinates)
+        for key in ("genomic_bin_width", "bin_size_bp", "genomic_bins"):
+            member = prefix + key + ".npy"
+            if member in names:
+                _copy_coordinates({key: load_npy(io.BytesIO(z.read(member))).tolist()}, coordinates)
         snapshots = _snapshots(metadata.get("snapshots"))
         for key in ("snapshots.npy", "exposure.npy", "S.npy"):
             if prefix + key in names:
@@ -169,6 +194,7 @@ def _archive_contents(z):
     if sessions:
         name = sessions[0]
         meta = _metadata(_loads(z.read(name)), "session.json")
+        _copy_coordinates(meta, coordinates)
         n = positive_integer(meta["n"], "Saved-session n")
         values = np.frombuffer(z.read(name[:-12] + "arrays.bin"), dtype="<f8")
         if len(values) < n**3:
@@ -180,27 +206,123 @@ def _archive_contents(z):
                 and base(n) not in ("metadata.json", "session.json")]
     if len(text) != 1:
         raise ValueError("Archive must contain one raw tensor; none or multiple candidates were found.")
+    prefix = text[0].rsplit("/", 1)[0] + "/" if "/" in text[0] else ""
+    if prefix + "metadata.json" in names:
+        _copy_coordinates(_metadata(_loads(z.read(prefix + "metadata.json")), "metadata.json"), coordinates)
     payload = z.read(text[0]).decode("utf-8-sig")
-    return _json(payload) if text[0].lower().endswith(".json") else _table(payload)
+    return _json(payload, coordinates) if text[0].lower().endswith(".json") else _table(payload)
 
 
-def _archive(path):
+def _archive(path, metadata=None):
     try:
         with zipfile.ZipFile(path) as z:
-            return _archive_contents(z)
+            return _archive_contents(z, metadata)
     except (RuntimeError, NotImplementedError, zlib.error) as exc:
         raise ValueError(f"Cannot read tensor archive: {exc}") from exc
 
 
-def load_input(path):
+COORDINATE_KEYS = ("genomic_bin_width", "bin_size_bp", "genomic_bins", "chromosome", "genome_assembly")
+
+
+def _copy_coordinates(source, destination):
+    """Keep declared genomic coordinates; never infer a width from tensor shape."""
+    if destination is None:
+        return
+    nested = _metadata(source.get("metadata", {}), "metadata")
+    for record in (source, nested):
+        for key in COORDINATE_KEYS:
+            if key in record:
+                if key in destination and destination[key] != record[key]:
+                    raise ValueError(f"Conflicting coordinate metadata for {key}.")
+                destination[key] = record[key]
+
+
+def validate_coordinates(metadata, n):
+    widths = [positive_integer(metadata[key], key) for key in
+              ("genomic_bin_width", "bin_size_bp") if key in metadata]
+    if len(set(widths)) > 1:
+        raise ValueError("Conflicting genomic bin widths in input metadata.")
+    if "genomic_bins" in metadata:
+        bins = metadata["genomic_bins"]
+        if not isinstance(bins, list) or len(bins) != n:
+            raise ValueError("genomic_bins must contain one bin ID per tensor axis position.")
+        if any(isinstance(b, bool) or not isinstance(b, int) or b < 0 for b in bins):
+            raise ValueError("Genomic bin IDs must be nonnegative integers.")
+        if any(a >= b for a, b in zip(bins, bins[1:])):
+            raise ValueError("Genomic bin IDs must be strictly increasing; gaps are preserved.")
+
+
+def parquet_kind(path):
+    import pyarrow.parquet as pq
+    fields = set(pq.ParquetFile(path).schema_arrow.names)
+    segments = {f"seg{x}_{field}" for x in "ABC" for field in ("chr", "start", "end")}
+    if segments <= fields:
+        return "segments"
+    if {"i", "j", "k"} <= fields:
+        return "binned"
+    raise ValueError("Parquet must contain segment A/B/C coordinates or a complete binned i,j,k,count/value table.")
+
+
+def _parquet(path, metadata):
+    """Read a complete binned coordinate table without changing its index order."""
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    source = pq.ParquetFile(path)
+    fields = source.schema_arrow.names
+    names = [key for key in ("value", "count", "counts", "raw") if key in fields]
+    if len(names) != 1 or not {"i", "j", "k"} <= set(fields):
+        raise ValueError("Binned Parquet needs i,j,k and exactly one value/count/counts/raw column.")
+    table = source.read(columns=["i", "j", "k", names[0]])
+    coordinates = []
+    for key in ("i", "j", "k"):
+        column = table[key]
+        if column.null_count or not pa.types.is_integer(column.type):
+            raise ValueError("Binned Parquet indices must be non-null integers.")
+        array = column.to_numpy()
+        if not array.size or np.any(array < 0) or np.any(array >= np.iinfo(np.int64).max):
+            raise ValueError("Invalid binned Parquet indices.")
+        coordinates.append(array.astype(np.int64))
+    n = max(int(c.max()) for c in coordinates) + 1
+    if n**3 != table.num_rows:
+        raise ValueError("Binned Parquet must contain every cell, including zeros; missing cells are not assumed zero.")
+    flat = np.ravel_multi_index(tuple(coordinates), (n, n, n))
+    if len(np.unique(flat)) != len(flat):
+        raise ValueError("Duplicate coordinate in binned Parquet.")
+    column = table[names[0]]
+    if column.null_count or not (pa.types.is_integer(column.type) or pa.types.is_floating(column.type)):
+        raise ValueError("Binned Parquet values must be non-null real numbers.")
+    values = column.to_numpy()
+    raw = np.empty((n, n, n), dtype=values.dtype)
+    raw.ravel()[flat] = values
+    encoded = (source.schema_arrow.metadata or {}).get(b"tensorbalance")
+    info = _metadata(_loads(encoded), "Parquet tensorbalance metadata") if encoded else {}
+    _copy_coordinates(info, metadata)
+    return raw, _snapshots(info.get("snapshots"))
+
+
+def load_input(path, *, metadata=None):
+    """Load existing bins without rebinning. Optionally return coordinate metadata in a dict."""
     path = Path(path)
     suffix = path.suffix.lower()
+    coordinates = {}
     if suffix == ".npy":
-        return load_npy(path), None
-    if suffix in (".npz", ".zip"):
-        return _archive(path)
-    if suffix == ".json":
-        return _json(path.read_text(encoding="utf-8-sig"))
-    if suffix in (".csv", ".tsv", ".txt"):
-        return _table(path.read_text(encoding="utf-8-sig"))
-    raise ValueError("Use NPY, NPZ, JSON, a full i,j,k,value CSV/TSV table, or a tensor ZIP.")
+        result = load_npy(path), None
+    elif suffix == ".parquet":
+        result = _parquet(path, coordinates)
+    elif suffix in (".npz", ".zip"):
+        result = _archive(path, coordinates)
+    elif suffix == ".json":
+        result = _json(path.read_text(encoding="utf-8-sig"), coordinates)
+    elif suffix in (".csv", ".tsv", ".txt"):
+        result = _table(path.read_text(encoding="utf-8-sig"))
+    else:
+        raise ValueError("Use NPY, NPZ, JSON, a full i,j,k,value CSV/TSV table, or a tensor ZIP.")
+    sidecar = path.with_suffix(".metadata.json")
+    if sidecar != path and sidecar.exists():
+        _copy_coordinates(_metadata(_loads(sidecar.read_text(encoding="utf-8-sig")), "Coordinate sidecar"), coordinates)
+    raw, snapshots = result
+    if raw.ndim == 3:
+        validate_coordinates(coordinates, raw.shape[0])
+    if metadata is not None:
+        metadata.update(coordinates)
+    return raw, snapshots
