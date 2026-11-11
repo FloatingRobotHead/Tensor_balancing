@@ -3,8 +3,8 @@
 Updated 2026-11-11 for Tensor Balance CLI 0.2.0.
 
 Read README.md, START_HERE.txt, and RELEASE_NOTES.md for the current contract.
-AUDIT_REPORT.md and the root numerical reports describe the historical 0.1.1
-release. Reference outputs in examples/ retain their historical conventions.
+AUDIT_REPORT.md indexes the evidence; audit/v0.1.1/ preserves the historical
+0.1.1 release reports. Reference outputs in examples/ retain their historical conventions.
 Current release evidence lives in audit/v0.2.0/.
 
 ## User requirements
@@ -73,3 +73,19 @@ ignored results/. The naming change does not require recomputing those arrays.
 Numerical checks do not establish biological interpretation or validate the
 choice of 0.5 for every resolution. Native Windows/macOS and minimum dependency
 versions have not been tested for this release.
+
+## Cleanup and source selection
+
+Use `main` and the top-level `tensorbalance/` package as the active source.
+On Voltron there is one active checkout. Five extracted source/build/install
+copies and six superseded package files were moved outside the checkout into
+the sibling folder `tensor_balance_archive/2026-11-11/`. That archive has
+a checksummed move manifest, original paths and restoration instructions.
+Adjacent `.ARCHIVED.txt` pointers identify moved items. Input data and research
+result arrays were preserved. Historical experiment scripts remain with their
+results and must not be mistaken for production modules.
+
+The local virtual environment was refreshed to the editable 0.2.0 installation.
+Check both `python -m pip show tensor-balance-cli` and `tensor-balance --version`
+when diagnosing which code is running. Root wrappers and solver helpers are
+required entry points/components, not duplicate versions.

@@ -183,7 +183,7 @@ Exit codes: 0 success; 2 input/usage/output error; 3 numerical failure;
 130 interruption.
 
 README.md has the detailed reference. RELEASE_NOTES.md and audit/v0.2.0/
-record current checks. AUDIT_REPORT.md retains the historical 0.1.1 audit.
+record current checks. AUDIT_REPORT.md indexes current and historical audits.
 Native Windows execution has not been tested for this release.
 The examples folder contains the bundled simulated patchwork tensor and
 reference outputs; none of the own-data commands above uses that example.

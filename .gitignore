@@ -11,3 +11,6 @@ results/
 /lcl*.parquet
 /lcl*.tsv.gz
 /wget-log*
+
+# Local pointers to retired source/build copies
+*.ARCHIVED.txt

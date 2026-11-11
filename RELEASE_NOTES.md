@@ -76,4 +76,4 @@ local configuration, and generated research outputs. The wheel installs the
 
 `MANIFEST_SHA256.json` records source-file checksums. Downloaded release archives
 have separate SHA-256 checksums. `START_HERE.txt` provides installation and usage
-instructions. Root audit reports describe the historical 0.1.1 release.
+instructions. Historical 0.1.1 reports are preserved in audit/v0.1.1/.

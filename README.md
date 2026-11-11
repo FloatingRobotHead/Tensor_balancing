@@ -2,9 +2,18 @@
 
 One **user-supplied raw contact tensor or segment-record Parquet** in; a reconstruction scalar, bias vector, bias matrix, and balanced remaining tensor out. The input filename is required. The program never substitutes demonstration data for your input.
 
-This release includes the source, regression tests, a reproducible numerical audit, and readable example results. See `RELEASE_NOTES.md` for this version’s changes and validation. `AUDIT_REPORT.md` describes the historical 0.1.1 audit.
+This release includes the source, regression tests, a reproducible numerical audit, and readable example results. See `RELEASE_NOTES.md` for this version’s changes and validation. `AUDIT_REPORT.md` indexes current and historical evidence.
 
 **Start with `START_HERE.txt` for the complete own-data workflow**, including copyable Windows and Linux/macOS commands. The `my_data/` folder is ready for your tensor files.
+
+## Active code and older copies
+
+Use the default `main` branch and the `tensorbalance/` package in this repository.
+The root `tensor_balance.py` and `export_csv.py` files only call that package.
+The solver modules are different supported methods, not older releases.
+Downloaded packages are frozen snapshots. `results/` contains experiment scripts
+and outputs, while `audit/` and `examples/checked_result*` retain historical
+validation. They are not alternative source trees for current development.
 
 ## 1. Install
 
@@ -337,7 +346,7 @@ python -m unittest discover -s tests -v
 python audit_numerics.py --out my_numerical_audit.json
 ```
 
-Use `.venv\Scripts\python.exe` instead of `python` on Windows without activation. The audit report path must be new. `audit/v0.2.0/` contains current validation. Root `UNIT_TEST_LOG.txt`, `NUMERICAL_AUDIT.json`, `VALIDATION.json`, and `AUDIT_REPORT.md` retain the historical 0.1.1 evidence and its limits. Historical 0.1.0 validation is kept separately under `audit/`; those historical real-data comparisons were not rerun in this audit.
+Use `.venv\Scripts\python.exe` instead of `python` on Windows without activation. The audit report path must be new. `audit/v0.2.0/` contains current validation. `audit/v0.1.1/` preserves the historical 0.1.1 reports and their limits. Historical 0.1.0 validation is kept separately under `audit/`; those historical real-data comparisons were not rerun in this audit.
 
 In your own Python code:
 
