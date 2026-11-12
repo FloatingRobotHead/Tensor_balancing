@@ -1,10 +1,9 @@
-include README.md START_HERE.txt RELEASE_NOTES.md handoff.md
-include MANIFEST_SHA256.json AUDIT_REPORT.md AGENTS.md CLAUDE.md
+include README.md
+include MANIFEST_SHA256.json AGENTS.md CLAUDE.md
 include tensor_balance.py export_csv.py audit_numerics.py
 recursive-include tests *.py
 recursive-include examples *.npy *.npz *.json *.csv *.html
 recursive-include audit *.json *.txt *.cjs *.md
-recursive-include my_data *.txt
 prune results
 prune .venv
 global-exclude __pycache__ *.py[cod]
