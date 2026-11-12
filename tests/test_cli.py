@@ -1,16 +1,18 @@
 import io
 import itertools
 import json
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 import zipfile
 import numpy as np
 
-from tensorbalance import balance
-from tensorbalance.cli import OUTPUTS
+from tensorbalance import balance, unit_fiber_result
+from tensorbalance.cli import METHODS, OUTPUTS, main
 from tensorbalance.decompose import ConvergenceError
 from tensorbalance.input import load_input
 
@@ -101,6 +103,147 @@ class InterfaceTests(unittest.TestCase):
         run = self.run_cli(self.input, "--out", out, "--method", "binomial")
         self.assertEqual(run.returncode, 2)
         self.assertIn("actual snapshot", run.stderr)
+        self.assertFalse(out.exists())
+
+    def test_all_methods_separate_outputs_match_individual_runs(self):
+        source = self.root / "raw.npz"
+        np.savez(source, raw=self.raw, snapshots=1000)
+        original = source.read_bytes()
+        out = self.root / "all"
+        run = self.run_cli(source, "--method", "all", "--out", out)
+        self.assertEqual(run.returncode, 0, run.stderr)
+        self.assertEqual({p.name for p in out.iterdir()}, {*METHODS, "summary.json"})
+        self.assertEqual(len(run.stdout.splitlines()), 13)
+        self.assertTrue(all(Path(p).is_file() for p in run.stdout.splitlines()))
+        summary = json.loads((out / "summary.json").read_text())
+        self.assertEqual(summary["status"], "complete")
+        self.assertEqual(summary["snapshots"], 1000)
+        for method in METHODS:
+            with self.subTest(method=method):
+                expected = unit_fiber_result(balance(self.raw, method=method, snapshots=1000))
+                self.assertEqual({p.name for p in (out / method).iterdir()}, set(OUTPUTS))
+                for name in OUTPUTS:
+                    np.testing.assert_array_equal(np.load(out / method / name), getattr(expected, name[:-4]))
+                b, m, r, c = [np.load(out / method / name) for name in OUTPUTS]
+                rebuilt = c * b[:, None, None] * b[None, :, None] * b[None, None, :] * m[:, :, None] * m[:, None, :] * m[None, :, :] * r - .5
+                np.testing.assert_allclose(rebuilt, self.raw, rtol=1e-10)
+                for axis in range(3):
+                    np.testing.assert_allclose(r.sum(axis), 1, rtol=1e-10)
+                entry = summary["methods"][method]
+                self.assertEqual(entry["status"], "success")
+                self.assertEqual(entry["diagnostics"]["fiber_sum_target"], 1)
+                self.assertEqual(set(entry["outputs"]), {f"{method}/{name}" for name in OUTPUTS})
+        self.assertEqual(source.read_bytes(), original)
+        saved = {p.relative_to(out): p.read_bytes() for p in out.rglob("*") if p.is_file()}
+        run = self.run_cli(source, "--method", "all", "--out", out)
+        self.assertEqual(run.returncode, 2, run.stderr)
+        self.assertEqual(saved, {p.relative_to(out): p.read_bytes() for p in out.rglob("*") if p.is_file()})
+
+    def test_all_methods_preflight_before_any_solver_or_output(self):
+        out = self.root / "invalid_all"
+        cases = [[], ["--snapshots", "0"], ["--snapshots", "nan"], ["--snapshots", "inf"],
+                 ["--snapshots", "1"], ["--snapshots", "1000", "--tolerance", "0"],
+                 ["--snapshots", "1000", "--max-iterations", "0"]]
+        for options in cases:
+            with self.subTest(options=options), patch("tensorbalance.cli.balance") as solver:
+                with redirect_stderr(io.StringIO()), redirect_stdout(io.StringIO()):
+                    code = main([str(self.input), "--method", "all", "--out", str(out), *options])
+                self.assertEqual(code, 2)
+                solver.assert_not_called()
+                self.assertFalse(out.exists())
+        invalid = self.raw.copy()
+        invalid[0, 1, 2] += 1
+        np.save(self.input, invalid)
+        with patch("tensorbalance.cli.balance") as solver, redirect_stderr(io.StringIO()):
+            self.assertEqual(main([str(self.input), "--method", "all", "--snapshots", "1000"]), 2)
+            solver.assert_not_called()
+        self.assertFalse((self.root / "raw_balanced").exists())
+
+    def test_all_methods_continue_after_each_solver_failure(self):
+        for failed in METHODS:
+            out = self.root / failed
+            inputs = []
+
+            def solver(raw, *, method, **options):
+                inputs.append(raw)
+                np.testing.assert_array_equal(raw, self.raw)
+                self.assertFalse(raw.flags.writeable)
+                if method == failed:
+                    raise ConvergenceError("Deliberate convergence failure")
+                return balance(raw, method=method, **options)
+
+            with self.subTest(failed=failed), patch("tensorbalance.cli.balance", side_effect=solver) as mocked:
+                with patch("tensorbalance.cli.load_input", wraps=load_input) as loader:
+                    with redirect_stderr(io.StringIO()), redirect_stdout(io.StringIO()):
+                        code = main([str(self.input), "--method", "all", "--snapshots", "1000", "--out", str(out)])
+                    loader.assert_called_once()
+                self.assertEqual(code, 3)
+                self.assertEqual([call.kwargs["method"] for call in mocked.call_args_list], list(METHODS))
+                self.assertTrue(all(raw is inputs[0] for raw in inputs))
+                summary = json.loads((out / "summary.json").read_text())
+                self.assertEqual(summary["status"], "incomplete")
+                self.assertEqual(summary["methods"][failed]["status"], "failed")
+                self.assertIn("convergence failure", summary["methods"][failed]["error"])
+                self.assertFalse((out / failed).exists())
+                for method in set(METHODS) - {failed}:
+                    self.assertEqual(summary["methods"][method]["status"], "success")
+                    self.assertEqual({p.name for p in (out / method).iterdir()}, set(OUTPUTS))
+
+    def test_all_methods_real_nonconvergence_saves_only_summary(self):
+        out = self.root / "failed_all"
+        run = self.run_cli(self.input, "--method", "all", "--snapshots", "1000",
+                           "--max-iterations", "1", "--out", out)
+        self.assertEqual(run.returncode, 3, run.stderr)
+        self.assertEqual([p.name for p in out.iterdir()], ["summary.json"])
+        summary = json.loads((out / "summary.json").read_text())
+        self.assertEqual(summary["status"], "incomplete")
+        self.assertTrue(all(entry["status"] == "failed" for entry in summary["methods"].values()))
+
+    def test_all_methods_metadata_views_and_exposure_override(self):
+        import re
+        source = self.root / "raw.json"
+        metadata = dict(genomic_bin_width=25000, genomic_bins=[0, 2, 4, 6, 8])
+        source.write_text(json.dumps(dict(raw=self.raw.tolist(), snapshots=1, metadata=metadata)))
+        out = self.root / "views"
+        run = self.run_cli(source, "--method", "all", "--snapshots", "1000", "--visualize", "--out", out)
+        self.assertEqual(run.returncode, 0, run.stderr)
+        self.assertEqual(len(run.stdout.splitlines()), 19)
+        summary = json.loads((out / "summary.json").read_text())
+        self.assertEqual(summary["snapshots"], 1000)
+        for method in METHODS:
+            self.assertEqual(json.loads((out / method / "metadata.json").read_text()), metadata)
+            html = (out / method / "visualization.html").read_text()
+            data = json.loads(re.search(r'<script id="tensor-data" type="application/json">(.*?)</script>', html, re.S).group(1))
+            np.testing.assert_array_equal(data["raw"], self.raw.ravel())
+            np.testing.assert_array_equal(data["tensor"], np.load(out / method / "balanced_tensor.npy").ravel())
+
+    def test_all_methods_interruption_retains_completed_results(self):
+        out = self.root / "interrupted"
+
+        def solver(raw, *, method, **options):
+            if method == "log-anova":
+                raise KeyboardInterrupt
+            return balance(raw, method=method, **options)
+
+        with patch("tensorbalance.cli.balance", side_effect=solver):
+            with redirect_stderr(io.StringIO()), redirect_stdout(io.StringIO()):
+                code = main([str(self.input), "--method", "all", "--snapshots", "1000", "--out", str(out)])
+        self.assertEqual(code, 130)
+        summary = json.loads((out / "summary.json").read_text())
+        self.assertEqual(summary["status"], "incomplete")
+        self.assertEqual(summary["methods"]["dh"]["status"], "success")
+        self.assertEqual(summary["methods"]["log-anova"]["status"], "interrupted")
+        self.assertEqual(summary["methods"]["binomial"]["status"], "pending")
+        self.assertEqual({p.name for p in out.iterdir()}, {"dh", "summary.json"})
+
+    def test_all_methods_segment_parquet_rejected_before_loading(self):
+        out = self.root / "segments_out"
+        with patch("tensorbalance.cli.parquet_kind", return_value="segments"):
+            with patch("tensorbalance.cli.load_input") as loader, redirect_stderr(io.StringIO()):
+                code = main([str(self.root / "segments.parquet"), "--method", "all", "--out", str(out),
+                             "--bin-size", "25000", "--chromosome", "chr21", "--unobserved-are-zero"])
+            loader.assert_not_called()
+        self.assertEqual(code, 2)
         self.assertFalse(out.exists())
 
     def test_optional_view_has_exact_outputs(self):

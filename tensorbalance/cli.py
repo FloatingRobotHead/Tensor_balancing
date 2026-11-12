@@ -9,11 +9,13 @@ import time
 from zipfile import BadZipFile
 import numpy as np
 from . import __version__
-from .decompose import balance, ConvergenceError, unit_fiber_result
+from .checks import positive_integer, scalar
+from .decompose import balance, ConvergenceError, unit_fiber_result, validate
 from .input import load_input, parquet_kind
 from .storage import write_directory
 
 OUTPUTS = ("bias_vector.npy", "bias_matrix.npy", "balanced_tensor.npy", "reconstruction_scalar.npy")
+METHODS = ("dh", "log-anova", "binomial")
 
 
 def write_result(destination, result, raw, visualize=False, metadata=None):
@@ -30,6 +32,73 @@ def write_result(destination, result, raw, visualize=False, metadata=None):
     return write_directory(destination, write)
 
 
+def run_all(output, raw, snapshots, args, metadata):
+    """Run independent methods, preserving successful outputs if another fails."""
+    raw = validate(raw)
+    tolerance = scalar(args.tolerance, "Tolerance")
+    max_iterations = positive_integer(args.max_iterations, "Maximum iterations")
+    if snapshots is None:
+        raise ValueError("Running all methods requires the actual snapshot count for Binomial: "
+                         "store snapshots in the input or supply --snapshots S.")
+    snapshots = scalar(snapshots, "Snapshot count")
+    if snapshots < raw.max():
+        raise ValueError("Snapshot count must be at least the largest raw count.")
+    # All solvers see the original counts; prevent accidental in-place changes.
+    raw.setflags(write=False)
+    output = output.absolute()
+    output.mkdir(parents=True)  # Exclusive reservation; never reuse an existing run.
+    summary = dict(input=str(args.input.resolve()), shape=list(raw.shape), snapshots=snapshots,
+                   tolerance=tolerance, max_iterations=max_iterations, status="running",
+                   methods={method: dict(status="pending") for method in METHODS})
+
+    def save_summary():
+        temporary = output / ".summary.json.tmp"
+        temporary.write_text(json.dumps(summary, indent=2, allow_nan=False) + "\n", encoding="utf-8")
+        temporary.replace(output / "summary.json")
+
+    save_summary()
+    for method in METHODS:
+        started = time.perf_counter()
+        summary["methods"][method] = dict(status="running")
+        save_summary()
+        print(f"{method}: starting", file=sys.stderr)
+        try:
+            try:
+                result = unit_fiber_result(balance(raw, method=method, snapshots=snapshots,
+                                                  tolerance=tolerance, max_iterations=max_iterations))
+            except (ConvergenceError, FloatingPointError) as exc:
+                summary["methods"][method] = dict(status="failed", error=str(exc))
+                print(f"{method}: {exc}", file=sys.stderr)
+                continue
+            destination = write_result(output / method, result, raw, args.visualize, metadata=metadata)
+            files = list(OUTPUTS)
+            if args.visualize:
+                files.append("visualization.html")
+            if metadata:
+                files.append("metadata.json")
+            summary["methods"][method] = dict(status="success", diagnostics=result.diagnostics,
+                                               outputs=[f"{method}/{name}" for name in files])
+            print(f"{method}: converged in {result.diagnostics['rounds']} iterations", file=sys.stderr)
+            for name in files:
+                print(destination / name)
+            del result  # Release the dense result before starting the next solver.
+        except (Exception, KeyboardInterrupt) as exc:
+            summary["status"] = "incomplete"
+            summary["methods"][method] = dict(status="interrupted" if isinstance(exc, KeyboardInterrupt)
+                                               else "failed", error=str(exc))
+            raise
+        finally:
+            summary["methods"][method]["elapsed_seconds"] = time.perf_counter() - started
+            save_summary()
+    complete = all(entry["status"] == "success" for entry in summary["methods"].values())
+    summary["status"] = "complete" if complete else "incomplete"
+    save_summary()
+    print(output / "summary.json")
+    if not complete:
+        print("tensor-balance: Some methods failed; see summary.json. Any successful results were saved.", file=sys.stderr)
+    return 0 if complete else 3
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="tensor-balance", description="One symmetric raw contact tensor → reconstruction scalar, bias vector, bias matrix, and unit-fiber tensor.",
@@ -38,7 +107,8 @@ def main(argv=None):
                "Segment-record Parquet requires --bin-size and --chromosome.")
     parser.add_argument("input", type=Path, help="already-binned tensor or coordinate Parquet, or segment-record Parquet")
     parser.add_argument("--out", type=Path, help="new output directory (default: INPUT_balanced)")
-    parser.add_argument("--method", choices=("dh", "log-anova", "binomial"), default="dh")
+    parser.add_argument("--method", choices=(*METHODS, "all"), default="dh",
+                        help="balancer (default: dh); all runs each method independently into separate folders")
     parser.add_argument("--snapshots", type=float, help="actual exposure S for Binomial, if absent from the input")
     parser.add_argument("--visualize", action="store_true", help="also write a self-contained visualization.html of these outputs")
     parser.add_argument("--tolerance", type=float, default=1e-10)
@@ -77,6 +147,8 @@ def main(argv=None):
         raw, snapshots = load_input(args.input, metadata=metadata)
         if args.snapshots is not None:
             snapshots = args.snapshots
+        if args.method == "all":
+            return run_all(output, raw, snapshots, args, metadata)
         result = balance(raw, method=args.method, snapshots=snapshots,
                          tolerance=args.tolerance, max_iterations=args.max_iterations)
         destination = write_result(output, result, raw, args.visualize, metadata=metadata)

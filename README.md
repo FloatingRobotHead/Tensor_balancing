@@ -16,7 +16,7 @@ raw[i,j,k] + 0.5 ≈ C · b[i]b[j]b[k] · M[i,j]M[i,k]M[j,k] · T[i,j,k]
 
 `C` is the overall scale, `b` is the bin bias vector, `M` is the pair bias matrix, and `T` is the balanced tensor. Every fiber of `T` sums to `1`; the geometric mean of `b` and of each row and column of `M` is `1`. Multiplying the factors and subtracting `0.5` reconstructs the input counts. The program checks convergence, fiber sums, and reconstruction before writing output.
 
-DH is the default balancing method. Log ANOVA and Binomial are also available for already-binned tensors. Binomial needs the actual number of snapshots or exposures; it cannot be inferred from the counts. Segment-record Parquet uses DH, bins segment midpoints, and requires explicit acceptance that unobserved triplets have zero counts. Already-binned input keeps its bin order and resolution.
+DH is the default balancing method. Log ANOVA and Binomial are also available for already-binned tensors. Use `--method all` to run all three sequentially on the same original tensor, with separate results for each. Binomial needs the actual number of snapshots or exposures; it cannot be inferred from the counts. Segment-record Parquet uses DH, bins segment midpoints, and requires explicit acceptance that unobserved triplets have zero counts. Already-binned input keeps its bin order and resolution.
 
 ## Code
 
@@ -47,7 +47,17 @@ Select another method or export the saved arrays as CSV:
 .venv/bin/tensor-export-csv results/my_run --out results/my_csv
 ```
 
-For Binomial input without exposure metadata, add `--snapshots S` with your measured `S`. For segment-record Parquet, install the optional dependency and choose a bin size in base pairs:
+Run all three methods on an already-binned tensor:
+
+```sh
+.venv/bin/tensor-balance my_tensor.npz --method all --out results/my_all
+```
+
+This saves the four arrays separately under `results/my_all/dh/`, `results/my_all/log-anova/`, and `results/my_all/binomial/`. Each set reconstructs the same original input with its corresponding tensor. Supplied coordinate metadata and optional `--visualize` views are saved per method. Export one method's results with, for example, `tensor-export-csv results/my_all/dh --out results/my_dh_csv`.
+
+`summary.json` records each method's status, output paths, elapsed time, and numerical diagnostics or error. A convergence failure does not stop the other methods or discard successful results; failed methods have no result folder. Exit code `0` means all three succeeded; `3` means numerical failure. Input/resource errors return `2`, and interruption returns `130`. After a resource error or interruption, any already-saved results are retained and unstarted methods remain pending in the summary. Existing output directories are never reused.
+
+For Binomial or `--method all` input without exposure metadata, add `--snapshots S` with your measured `S`. All-method runs check that exposure is positive, finite, and at least the largest input count before starting any solver. Segment-record Parquet supports only DH, so `--method all` requires an already-binned tensor. For segment-record Parquet, install the optional dependency and choose a bin size in base pairs:
 
 ```sh
 .venv/bin/python -m pip install -e '.[parquet]'
