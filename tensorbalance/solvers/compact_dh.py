@@ -1,11 +1,12 @@
-"""DH evaluated as W[i,j,k]=(raw+0.5)*A[i,j]*A[i,k]*A[j,k].
+"""DH evaluated as W[i,j,k]=protect_zeros(raw)*A[i,j]*A[i,k]*A[j,k].
 
-The complete pseudocount background has pair marginal 0.5*A*(A@A.T).
+The epsilon background is removed at positive observations so they stay unchanged.
 The update is algebraically the dense symmetric DH square-root update.
 """
 from itertools import permutations
 import numpy as np
 from ..checks import positive_integer, scalar
+from ..pseudocount import PSEUDOCOUNT
 
 
 def ordered(i, j, k, count):
@@ -27,7 +28,7 @@ def ordered(i, j, k, count):
 
 
 def solve(n, indices, counts, tolerance=1e-10, max_rounds=5000, progress=None):
-    """Balance symmetric ordered counts, including a 0.5 background in every cell.
+    """Balance symmetric ordered counts, with 1e-12 only at zero-count cells.
 
     Caller supplies unique ordered coordinates with permutation-symmetric counts,
     normally produced by ordered() from unique sorted canonical triples.
@@ -40,16 +41,25 @@ def solve(n, indices, counts, tolerance=1e-10, max_rounds=5000, progress=None):
         raise ValueError('Expected integer coordinates with shape (number of counts, 3).')
     if np.any(indices < 0) or np.any(indices >= n) or not np.isfinite(counts).all() or np.any(counts < 0):
         raise ValueError('Invalid sparse coordinates or counts.')
+    positive = counts > 0
+    indices, counts = indices[positive], counts[positive]
     i, j, k = indices.T
     ij, ik, jk = i*n+j, i*n+k, j*n+k
-    total = 0.5*n**3 + counts.sum()
+    total = PSEUDOCOUNT*(n**3-len(counts)) + counts.sum()
     factors = np.full((n, n), (n**3/total)**(1/3))
 
     def marginals(a):
         flat = a.ravel()
-        weights = counts*flat[ij]*flat[ik]*flat[jk]
+        weights = (counts-PSEUDOCOUNT)*flat[ij]*flat[ik]*flat[jk]
         observed = np.bincount(ij, weights=weights, minlength=n*n).reshape(n, n)
-        result = 0.5*a*(a@a.T) + observed
+        result = PSEUDOCOUNT*a*(a@a.T) + observed
+        if counts.size and counts.min() < PSEUDOCOUNT*1e8:
+            # Avoid cancellation when genuine positive values are tiny.
+            for first in range(n):
+                slab = np.full((n, n), PSEUDOCOUNT)
+                keep = i == first
+                slab[j[keep], k[keep]] = counts[keep]
+                result[first] = a[first]*np.sum(slab*a[first,None,:]*a, axis=1)
         if not np.isfinite(result).all() or np.any(result <= 0):
             raise FloatingPointError('Invalid compact DH marginals.')
         return result
@@ -86,6 +96,6 @@ def solve(n, indices, counts, tolerance=1e-10, max_rounds=5000, progress=None):
     if not np.isfinite(b).all() or not np.isfinite(matrix).all() or np.any(b <= 0) or np.any(matrix <= 0):
         raise FloatingPointError('Invalid divisor factors.')
     diagnostics = dict(status='converged', rounds=iteration, tolerance=tolerance,
-                       pseudocount=0.5, residual_mean=float(pair_sums.sum()/n**3),
+                       pseudocount=PSEUDOCOUNT, residual_mean=float(pair_sums.sum()/n**3),
                        **{key: value for key, value in history[-1].items() if key != 'round'})
     return b, matrix, factors, diagnostics, history

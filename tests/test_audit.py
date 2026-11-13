@@ -301,8 +301,8 @@ class AuditTests(unittest.TestCase):
 
     def test_known_pair_only_and_triple_only_controls(self):
         raw,b,m,r=known_factors()
-        pair_only=b[:,None,None]*b[None,:,None]*b[None,None,:]*m[:,:,None]*m[:,None,:]*m[None,:,:]-.5
-        triple_only=50*r-.5
+        pair_only=b[:,None,None]*b[None,:,None]*b[None,None,:]*m[:,:,None]*m[:,None,:]*m[None,:,:]
+        triple_only=50*r
         for method in ('dh','log-anova','binomial'):
             with self.subTest(method=method):
                 a=balance(pair_only,method=method,snapshots=1000)
@@ -320,12 +320,12 @@ class AuditTests(unittest.TestCase):
                 np.testing.assert_allclose(b.balanced_tensor,a.balanced_tensor[ix],rtol=1e-9)
                 np.testing.assert_allclose(b.bias_matrix,a.bias_matrix[np.ix_(order,order)],rtol=1e-9)
                 np.testing.assert_allclose(b.bias_vector,a.bias_vector[order],rtol=1e-9)
-                c=balance((self.raw+.5)*7-.5,method=method,snapshots=10000)
+                c=balance(self.raw*7,method=method,snapshots=10000)
                 np.testing.assert_allclose(c.balanced_tensor,a.balanced_tensor,rtol=1e-9)
                 np.testing.assert_allclose(c.bias_matrix,a.bias_matrix,rtol=1e-9)
                 np.testing.assert_allclose(c.bias_vector,a.bias_vector*np.cbrt(7),rtol=1e-9)
                 contrast=lambda x: np.diff(np.diff(np.diff(np.log(x),axis=0),axis=1),axis=2)
-                np.testing.assert_allclose(contrast(a.balanced_tensor),contrast(self.raw+.5),atol=2e-13)
+                np.testing.assert_allclose(contrast(a.balanced_tensor),contrast(self.raw),atol=2e-13)
 
 
 if __name__=='__main__':unittest.main()

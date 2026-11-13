@@ -9,6 +9,7 @@ from .solvers.compact_dh import ordered
 from .storage import write_directory
 from .decompose import separate_scale
 from .input import load_reconstruction_scalar
+from .pseudocount import protect_zeros
 
 
 def export_dense(source, destination):
@@ -27,6 +28,9 @@ def export_dense(source, destination):
         b, overall = separate_scale(b)
         factors = factors / np.cbrt(n)
     with np.load(source/'triplet_counts.npz', allow_pickle=False) as data:
+        epsilon = float(data['zero_pseudocount']) if 'zero_pseudocount' in data else None
+        if epsilon is not None and (not np.isfinite(epsilon) or epsilon <= 0):
+            raise ValueError('Invalid zero-only pseudocount.')
         ids, counts = ordered(data['i'], data['j'], data['k'], data['count'])
     if np.any(ids < 0) or np.any(ids >= n) or not np.isfinite(counts).all() or np.any(counts < 0):
         raise ValueError('Invalid compact counts.')
@@ -49,9 +53,10 @@ def export_dense(source, destination):
                 start, stop = offsets[i:i+2]
                 cells = ids[start:stop]
                 raw[cells[:,1], cells[:,2]] = counts[start:stop]
-                slab = (raw+0.5)*factors[i,:,None]*factors[i,None,:]*factors
+                protected = raw+0.5 if epsilon is None else protect_zeros(raw, epsilon)
+                slab = protected*factors[i,:,None]*factors[i,None,:]*factors
                 rebuilt = overall*slab*b[i]*b[:,None]*b[None,:]*matrix[i,:,None]*matrix[i,None,:]*matrix
-                error = float(np.max(np.abs(rebuilt/(raw+0.5)-1)))
+                error = float(np.max(np.abs(rebuilt/protected-1)))
                 if not np.isfinite(slab).all() or np.any(slab <= 0) or not np.isfinite(error):
                     raise ValueError('Invalid dense reconstruction.')
                 reconstruction_error = max(reconstruction_error, error)

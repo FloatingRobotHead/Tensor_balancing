@@ -102,7 +102,7 @@ def run_all(output, raw, snapshots, args, metadata):
 def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="tensor-balance", description="One symmetric raw contact tensor → reconstruction scalar, bias vector, bias matrix, and unit-fiber tensor.",
-        epilog="Defaults: DH, raw + 0.5, full cube, output fiber sums 1. "
+        epilog="Defaults: DH, 1e-12 at zeros only, full cube, output fiber sums 1. "
                "Binned input retains its bins; supplied coordinates are saved in metadata.json. "
                "Segment-record Parquet requires --bin-size and --chromosome.")
     parser.add_argument("input", type=Path, help="already-binned tensor or coordinate Parquet, or segment-record Parquet")
@@ -154,7 +154,7 @@ def main(argv=None):
         destination = write_result(output, result, raw, args.visualize, metadata=metadata)
         d = result.diagnostics
         print(f"{args.method}: converged in {d['rounds']} iterations ({time.perf_counter() - started:.2f} s)", file=sys.stderr)
-        print(f"raw + 0.5; exported fiber sums 1; fiber spread {d['stack_excess']:.3g}; "
+        print(f"1e-12 at zeros only; exported fiber sums 1; fiber spread {d['stack_excess']:.3g}; "
               f"reconstruction error {d['reconstruction_relative_error']:.3g}", file=sys.stderr)
         # stdout is a clean list of paths, useful for Unix pipelines.
         for name in OUTPUTS:

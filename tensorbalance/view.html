@@ -10,7 +10,7 @@
 <article><h2>Bias vector</h2><canvas id="vector" aria-label="Bias vector line graph"></canvas><p class="note">Divisor factors · scale recorded separately when supplied</p></article>
 <article><h2>Bias matrix · IJ</h2><canvas id="matrix" aria-label="Bias matrix heatmap"></canvas><div class="legend"><span>≤ 0.25</span><span class="bar"></span><span>≥ 4</span></div><p class="note">Divisor factors · midpoint 1</p></article>
 <article class="slice"><h2>Remaining tensor · IJ slice</h2><canvas id="slice" aria-label="Balanced tensor slice"></canvas><label id="slice-label" for="height"></label><input type="range" id="height" min="0" value="0" aria-label="K slice"><div class="legend"><span>≤ 0.25</span><span class="bar"></span><span>≥ 4</span></div></article>
-</div><footer>Displays the computed CLI arrays. Raw + 0.5 = reconstruction scalar × vector factors × pair factors × remaining tensor, within numerical precision. A remaining peak alone does not identify a physical triple interaction.</footer></main>
+</div><footer>Displays the computed CLI arrays. Raw with zeros replaced by 1e-12 = reconstruction scalar × vector factors × pair factors × remaining tensor, within numerical precision. A remaining peak alone does not identify a physical triple interaction.</footer></main>
 <script id="tensor-data" type="application/json">/*DATA*/</script>
 <script>
 'use strict';const D=JSON.parse(document.getElementById('tensor-data').textContent),n=D.n,$=id=>document.getElementById(id);const tensorDisplay=D.tensor.map(v=>v*(D.tensor_display_multiplier||1));let yaw=.65,pitch=-.35;

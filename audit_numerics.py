@@ -32,8 +32,8 @@ def cases():
 
 def reference_ipf(raw):
     # Independent arithmetic implementation: directly scale every fiber to n,
-    # cycling through the axes, starting from raw+0.5 (no source-solver calls).
-    n=len(raw);a=raw.copy()+.5;a/=a.mean()
+    # cycling through the axes, starting from raw with zeros replaced by 1e-12 (no source-solver calls).
+    n=len(raw);a=np.where(raw==0,1e-12,raw);a/=a.mean()
     for iteration in range(100000):
         for axis in range(3):a*=n/a.sum(axis,keepdims=True)
         error=max(float(np.max(np.abs(a.sum(axis)/n-1))) for axis in range(3))
@@ -61,7 +61,7 @@ def audit():
             plane=max(float(np.max(np.abs(w.sum(tuple(q for q in range(3) if q!=axis))/len(w)**2-1))) for axis in range(3))
             ref_error=float(np.max(np.abs(w/expected-1)))
             rebuilt=b[:,None,None]*b[None,:,None]*b[None,None,:]*m[:,:,None]*m[:,None,:]*m[None,:,:]*w
-            reconstruction=float(np.max(np.abs(rebuilt/(raw+.5)-1)))
+            reconstruction=float(np.max(np.abs(rebuilt/np.where(raw==0,1e-12,raw)-1)))
             centering=float(np.max(np.abs(np.log(m).mean(axis=1))))
             symmetry=max(float(np.max(np.abs(w/w.transpose(p)-1))) for p in itertools.permutations(range(3)))
             assert fiber<1e-10 and plane<1e-10 and abs(float(w.mean())-1)<1e-12
@@ -74,7 +74,7 @@ def audit():
             eb,em,et=exported.bias_vector,exported.bias_matrix,exported.balanced_tensor
             export_fiber=max(float(np.max(np.abs(et.sum(axis)-1))) for axis in range(3))
             export_rebuilt=exported.reconstruction_scalar*et*eb[:,None,None]*eb[None,:,None]*eb[None,None,:]*em[:,:,None]*em[:,None,:]*em[None,:,:]
-            export_reconstruction=float(np.max(np.abs(export_rebuilt/(raw+.5)-1)))
+            export_reconstruction=float(np.max(np.abs(export_rebuilt/np.where(raw==0,1e-12,raw)-1)))
             assert export_fiber<1e-10 and export_reconstruction<1e-8
             assert abs(float(np.log(eb).mean()))<1e-12
             np.testing.assert_allclose(et,expected/len(raw),rtol=1e-8)

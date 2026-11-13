@@ -33,7 +33,7 @@ T contains dimensionless weights, not raw counts or a joint probability distribu
 
 ## How we do it
 
-Let X be the input counts and Y the counts used by the solver. The code currently published here uses `Y = X + 0.5` at every cell. This adds total mass `0.5 × n³`, which can dominate a finely binned sparse dataset; it is not a resolution-independent correction.
+Let X be the input counts and Y the counts used by the solver. Every exact zero is replaced once with the fixed value `1e-12`, identical across datasets; positive counts are unchanged. Thus `Y = where(X == 0, 1e-12, X)`. There is no adaptive cap: for Z zeros, the total added mass is `1e-12 × Z`.
 
 The reconstruction equation is:
 
@@ -48,7 +48,7 @@ log Y[i,j,k] ≈ c + u[i] + u[j] + u[k] + v[i,j] + v[i,k] + v[j,k] + t[i,j,k]
 c = log C;  u = log b;  v = log M;  t = log T
 ```
 
-Thus the model is multiplicative in counts and additive in their logarithms. The geometric mean of b and of each row/column of M is 1, fixing how scale is divided between the factors. Multiplying the four factors reconstructs Y within numerical tolerance; subtracting the smoothing correction recovers X.
+Thus the model is multiplicative in counts and additive in their logarithms. The geometric mean of b and of each row/column of M is 1, fixing how scale is divided between the factors. Multiplying the four factors reconstructs Y within numerical tolerance; setting originally zero cells back to zero recovers X. Use the original zero mask: a positive measurement can also equal `1e-12`.
 
 Choose **Daryl Huntley (DH)**, **Log ANOVA**, or **Binomial** for already-binned input. DH is the default; its compact segment-record implementation keeps pair factors in memory instead of a full cube during solving. The other two methods use dense arrays. Binomial requires the measured number of snapshots/exposures S, with S at least the largest count; S cannot be inferred from the count file. Segment-record Parquet currently supports compact DH only.
 

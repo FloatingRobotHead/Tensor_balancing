@@ -4,6 +4,7 @@ import tempfile
 import unittest
 import numpy as np
 from tensorbalance import balance
+from tensorbalance.pseudocount import protect_zeros
 from tensorbalance.parquet_pipeline import prepare, reconstruct_region, main
 from tensorbalance.solvers.compact_dh import ordered, solve
 
@@ -30,14 +31,14 @@ class CompactTests(unittest.TestCase):
             np.testing.assert_allclose(b, reference.bias_vector, rtol=1e-8)
             np.testing.assert_allclose(m, reference.bias_matrix, rtol=1e-8)
             rebuilt = residual*b[:,None,None]*b[None,:,None]*b[None,None,:]*m[:,:,None]*m[:,None,:]*m[None,:,:]
-            np.testing.assert_allclose(rebuilt, raw+0.5, rtol=1e-12)
+            np.testing.assert_allclose(rebuilt, protect_zeros(raw), rtol=1e-12)
             for axis in range(3):
                 np.testing.assert_allclose(residual.sum(axis), n, rtol=1e-10)
 
     def test_empty_counts_and_failed_convergence(self):
         ids, values = ordered(*np.empty((0, 3), dtype=int).T, np.array([]))
         b, m, a, _, _ = solve(3, ids, values)
-        np.testing.assert_allclose(0.5*a[0,0]**3, 1)
+        np.testing.assert_allclose(1e-12*a[0,0]**3, 1)
         with self.assertRaises(RuntimeError):
             solve(3, ids, values, max_rounds=1)
 

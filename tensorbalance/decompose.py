@@ -4,7 +4,7 @@ import numpy as np
 from .solvers import dh_sqrt
 from .checks import MAX_EXACT_INTEGER, SYMMETRY_RTOL, check_python_integers, positive_integer, scalar
 
-PSEUDOCOUNT = 0.5
+from .pseudocount import PSEUDOCOUNT, protect_zeros
 
 
 @dataclass
@@ -55,7 +55,7 @@ def extract_factors(raw, residual):
     Absorb the scalar scale into the shared vector; pair row/column geometric
     means are one. This is a factor extraction, not a second normalization.
     """
-    z = np.log(raw + PSEUDOCOUNT) - np.log(residual)
+    z = np.log(protect_zeros(raw)) - np.log(residual)
     c = float(z.mean())
     v = sum(z.mean(tuple(a for a in range(3) if a != axis)) for axis in range(3)) / 3 - c
     p = sum(z.mean(axis) for axis in range(3)) / 3 - c - v[:, None] - v[None, :]
@@ -78,7 +78,7 @@ def extract_factors(raw, residual):
     for i in range(len(raw)):
         rebuilt_log = (lb[i] + lb[:, None] + lb[None, :] + lm[i, :, None]
                        + lm[i, None, :] + lm + np.log(residual[i]))
-        error = max(error, float(np.max(np.abs(np.expm1(rebuilt_log - np.log(raw[i] + PSEUDOCOUNT))))))
+        error = max(error, float(np.max(np.abs(np.expm1(rebuilt_log - np.log(protect_zeros(raw[i])))))))
     if not np.isfinite(error) or error > 1e-8:
         raise FloatingPointError(f"Three-factor reconstruction failed (relative error {error:.3g}).")
     return b, matrix, error
@@ -87,7 +87,7 @@ def extract_factors(raw, residual):
 def balance(raw, *, method="dh", snapshots=None, tolerance=1e-10, max_iterations=5000):
     """Return the bias vector, bias matrix and mean-one balanced tensor.
 
-    raw + 0.5 ≈ b[i] b[j] b[k] M[i,j] M[i,k] M[j,k] R[i,j,k].
+    protect_zeros(raw) ≈ b[i] b[j] b[k] M[i,j] M[i,k] M[j,k] R[i,j,k].
     Raises on failed convergence; never relabels a partial result as balanced.
     """
     x = validate(raw)
@@ -156,7 +156,7 @@ def separate_scale(bias_vector):
 def unit_fiber_result(result):
     """Convert the internal mean-one result to four reconstructing output factors.
 
-    raw + pseudocount = reconstruction_scalar * b_i*b_j*b_k * M_ij*M_ik*M_jk * T_ijk.
+    protect_zeros(raw) = reconstruction_scalar * b_i*b_j*b_k * M_ij*M_ik*M_jk * T_ijk.
     T has unit fiber sums; b has geometric mean one.
     """
     if result.reconstruction_scalar is not None:

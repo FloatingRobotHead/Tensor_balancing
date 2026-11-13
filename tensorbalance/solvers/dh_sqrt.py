@@ -5,6 +5,7 @@ with default alpha=0.5. No reference tensor, adaptive line search, or other
 normalizer is used. Full-cube mean-one relative weights are returned.
 """
 import numpy as np
+from ..pseudocount import PSEUDOCOUNT, protect_zeros
 
 
 def normalize_mean(z):
@@ -31,13 +32,13 @@ def deviation(w):
                 plane_excess=float((planes.max()-planes.min())/planes.min()))
 
 
-def normalize(raw, *, alpha=0.5, pseudocount=0.5, tolerance=1e-10, max_rounds=5000):
+def normalize(raw, *, alpha=0.5, pseudocount=PSEUDOCOUNT, tolerance=1e-10, max_rounds=5000):
     x=np.asarray(raw,dtype=float)
     if x.ndim!=3 or len(set(x.shape))!=1 or not np.isfinite(x).all() or (x<0).any():
         raise ValueError('Finite nonnegative cubic tensor required')
     if pseudocount<=0 or not 0<alpha<=1:
         raise ValueError('Require positive pseudocount and 0 < alpha <= 1')
-    z=normalize_mean(np.log(x+pseudocount));w=np.exp(z)
+    z=normalize_mean(np.log(protect_zeros(x, pseudocount)));w=np.exp(z)
     streak=0;history=[];status='max_rounds'
     for it in range(1,max_rounds+1):
         nz=normalize_mean(z-alpha*log_divisor(w));new=np.exp(nz)

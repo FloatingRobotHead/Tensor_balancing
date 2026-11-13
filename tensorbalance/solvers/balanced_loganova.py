@@ -4,6 +4,7 @@ Same projection and sequential marginal-balancing formulas as the recovered
 normalizers.py. Replaces its fixed-round driver with a tolerance-based driver.
 """
 import numpy as np
+from ..pseudocount import PSEUDOCOUNT, protect_zeros
 from scipy.special import logsumexp
 from .dh_sqrt import deviation
 
@@ -24,7 +25,7 @@ def normalize(raw, *, tolerance=1e-10, max_rounds=5000):
         raise ValueError('Finite nonnegative nonempty cubic counts required')
     if not np.isfinite(tolerance) or tolerance<=0 or max_rounds<1:
         raise ValueError('Require positive tolerance and max_rounds')
-    z=unit_log(log_projection(np.log(x+.5)))
+    z=unit_log(log_projection(np.log(protect_zeros(x))))
     history=[];streak=0;status='max_rounds'
     for iteration in range(1,max_rounds+1):
         nz=z.copy()
@@ -40,4 +41,4 @@ def normalize(raw, *, tolerance=1e-10, max_rounds=5000):
         streak=streak+1 if passed else 0
         if streak>=3:
             status='converged';break
-    return y,dict(status=status,rounds=iteration,pseudocount=.5,tolerance=tolerance,**scores),history
+    return y,dict(status=status,rounds=iteration,pseudocount=PSEUDOCOUNT,tolerance=tolerance,**scores),history

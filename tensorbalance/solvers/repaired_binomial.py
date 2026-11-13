@@ -5,6 +5,7 @@ reduced to make the binomial parameterization feasible. No DH, ANOVA, or
 reference answer is used in this solver. Positive symmetric full cubes only.
 """
 import numpy as np
+from ..pseudocount import PSEUDOCOUNT, protect_zeros
 from scipy.special import logsumexp
 from .binomial_fit import fit_eta
 from ..checks import SYMMETRY_RTOL
@@ -66,9 +67,9 @@ def normalize(raw, snapshots, *, tolerance=1e-10, max_rounds=2000,
            for o in [(1,0,2),(0,2,1)]):
         raise ValueError('Symmetric full-cube counts required')
     n = len(x)
-    z = unit_log(np.log(x+.5))
+    z = unit_log(np.log(protect_zeros(x)))
     y = np.exp(z)
-    original_mu = float(np.mean((x+.5)/(snapshots+1)))
+    original_mu = float(np.mean(protect_zeros(x)/snapshots))
     if scale_policy == 'safe':
         mu = min(original_mu, .5/n, .5/float(y.max()))
     elif scale_policy == 'original':
@@ -145,5 +146,5 @@ def normalize(raw, snapshots, *, tolerance=1e-10, max_rounds=2000,
                 progress_backtracks=sum(h['progress_rejects'] for h in history),
                 domain_backtracks=sum(h['domain_rejects'] for h in history),
                 additional_scale_reductions=scale_reductions,
-                pseudocount=.5, tolerance=tolerance)
+                pseudocount=PSEUDOCOUNT, tolerance=tolerance)
     return y, info, history

@@ -26,7 +26,7 @@ def known_factors():
     m = np.exp(.24 * f[:, None] * f[None, :])
     r = 1 + .45 * f[:, None, None] * f[None, :, None] * f[None, None, :]
     a = v[:, None, None] * v[None, :, None] * v[None, None, :] * m[:, :, None] * m[:, None, :] * m[None, :, :] * r
-    return a - .5, v, m, r
+    return a, v, m, r
 
 
 class NumericalTests(unittest.TestCase):
@@ -50,7 +50,7 @@ class NumericalTests(unittest.TestCase):
             r = balance(raw)
             np.testing.assert_allclose(r.balanced_tensor, 1, atol=1e-13)
             np.testing.assert_allclose(r.bias_matrix, 1, atol=1e-13)
-            np.testing.assert_allclose(r.bias_vector, np.cbrt(raw.mean() + .5))
+            np.testing.assert_allclose(r.bias_vector, np.cbrt(raw.mean() if raw.any() else 1e-12))
 
     def test_invalid_tensor_and_settings(self):
         raw = known_factors()[0]
@@ -88,7 +88,7 @@ class InterfaceTests(unittest.TestCase):
         self.assertEqual(sorted(p.name for p in out.iterdir()), sorted(OUTPUTS))
         self.assertEqual(len(run.stdout.splitlines()), 4)
         b, m, r, scalar = [np.load(out / name) for name in OUTPUTS]
-        reconstructed = scalar * b[:, None, None] * b[None, :, None] * b[None, None, :] * m[:, :, None] * m[:, None, :] * m[None, :, :] * r - .5
+        reconstructed = scalar * b[:, None, None] * b[None, :, None] * b[None, None, :] * m[:, :, None] * m[:, None, :] * m[None, :, :] * r
         np.testing.assert_allclose(reconstructed, self.raw, rtol=1e-12)
         before = (out / "bias_vector.npy").read_bytes()
         run = self.run_cli(self.input)
@@ -125,7 +125,7 @@ class InterfaceTests(unittest.TestCase):
                 for name in OUTPUTS:
                     np.testing.assert_array_equal(np.load(out / method / name), getattr(expected, name[:-4]))
                 b, m, r, c = [np.load(out / method / name) for name in OUTPUTS]
-                rebuilt = c * b[:, None, None] * b[None, :, None] * b[None, None, :] * m[:, :, None] * m[:, None, :] * m[None, :, :] * r - .5
+                rebuilt = c * b[:, None, None] * b[None, :, None] * b[None, None, :] * m[:, :, None] * m[:, None, :] * m[None, :, :] * r
                 np.testing.assert_allclose(rebuilt, self.raw, rtol=1e-10)
                 for axis in range(3):
                     np.testing.assert_allclose(r.sum(axis), 1, rtol=1e-10)

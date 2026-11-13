@@ -23,7 +23,7 @@ class ScalarOutputTests(unittest.TestCase):
             np.testing.assert_allclose(np.log(b).mean(),0,atol=1e-14)
             np.testing.assert_allclose(np.log(m).mean(0),0,atol=1e-14)
             rebuilt=s*t*b[:,None,None]*b[None,:,None]*b[None,None,:]*m[:,:,None]*m[:,None,:]*m[None,:,:]
-            np.testing.assert_allclose(rebuilt,raw+.5,rtol=1e-8)
+            np.testing.assert_allclose(rebuilt,raw,rtol=1e-8)
             np.testing.assert_array_equal(t,internal.balanced_tensor/3)
             self.assertIs(unit_fiber_result(result),result)
             np.testing.assert_allclose(t.sum(),9)
@@ -34,7 +34,7 @@ class ScalarOutputTests(unittest.TestCase):
             source=write_result(root/'out',balance(raw),raw)
             self.assertEqual({p.name for p in source.iterdir()},{'reconstruction_scalar.npy','bias_vector.npy','bias_matrix.npy','balanced_tensor.npy'})
             self.assertEqual(np.load(source/'reconstruction_scalar.npy').shape,())
-            np.testing.assert_allclose(np.load(source/'reconstruction_scalar.npy'),7)
+            np.testing.assert_allclose(np.load(source/'reconstruction_scalar.npy'),6)
             dest=export_csv(source,root/'csv')
             np.testing.assert_equal(np.loadtxt(dest/'reconstruction_scalar.csv',skiprows=1),np.load(source/'reconstruction_scalar.npy'))
             # Early development results used the ambiguous filename scalar.npy.
@@ -53,13 +53,13 @@ class ScalarOutputTests(unittest.TestCase):
     def test_dense_expansion_accepts_legacy_and_new_compact(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);source=root/'old';source.mkdir()
-            triples=np.array([[0,0,0],[0,1,1],[1,1,1]])
-            counts=np.array([9,4,3])
+            triples=np.array([[0,0,0],[0,0,1],[0,1,1],[1,1,1]])
+            counts=np.array([9,2,4,3])
             ids,values=ordered(*triples.T,counts)
             b,m,a,_,_=solve(2,ids,values)
             for name,value in [('bias_vector',b),('bias_matrix',m),('residual_pair_factors',a)]:
                 np.save(source/f'{name}.npy',value)
-            np.savez(source/'triplet_counts.npz',i=triples[:,0],j=triples[:,1],k=triples[:,2],count=counts)
+            np.savez(source/'triplet_counts.npz',i=triples[:,0],j=triples[:,1],k=triples[:,2],count=counts,zero_pseudocount=1e-12)
             first=export_dense(source,root/'first')
             np.testing.assert_allclose(np.load(first/'balanced_tensor.npy').sum(0),1,rtol=1e-10)
             # Rewrite compact factors in the new convention and confirm expansion agrees.

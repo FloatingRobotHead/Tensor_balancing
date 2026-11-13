@@ -14,6 +14,7 @@ import numpy as np
 from . import __version__
 from .checks import positive_integer
 from .decompose import Result, separate_scale
+from .pseudocount import PSEUDOCOUNT, protect_zeros
 from .solvers.compact_dh import ordered, solve
 from .storage import write_directory
 from .visualize import save_view
@@ -73,7 +74,7 @@ def reconstruct_region(triples, counts, factors, first, stop):
     raw = np.zeros((stop-first,) * 3)
     raw[tuple(ids.T)] = values
     a = factors[first:stop, first:stop]
-    residual = (raw + 0.5) * a[:, :, None] * a[:, None, :] * a[None, :, :]
+    residual = protect_zeros(raw) * a[:, :, None] * a[:, None, :] * a[None, :, :]
     return raw, residual
 
 
@@ -126,7 +127,7 @@ def run(args):
                   domain='All bins from zero through the last observed midpoint; assembly unspecified.',
                   counting='Every supplied row once; all accessions/haplotypes pooled; no additional filtering or deduplication.',
                   symmetry='Each unordered count copied to each distinct permutation, including repeated-index cells.',
-                  zeros='Unobserved combinations assigned zero; fixed 0.5 pseudocount in every cell.',
+                  zeros='Unobserved combinations assigned zero; fixed 1e-12 pseudocount only at zero counts.',
                   reconstruction_relative_error_bound=error_bound, diagnostics=diagnostics,
                   elapsed_seconds=time.perf_counter()-started,
                   versions=dict(python=sys.version.split()[0], numpy=np.__version__, pyarrow=pa.__version__))
@@ -146,9 +147,9 @@ def run(args):
                 else:
                     writer.writerow(['i', *range(n)])
                     writer.writerows([i, *[format(v, '.17g') for v in row]] for i, row in enumerate(array))
-        np.savez_compressed(stage / 'triplet_counts.npz', i=triples[:, 0], j=triples[:, 1], k=triples[:, 2], count=counts)
+        np.savez_compressed(stage / 'triplet_counts.npz', i=triples[:, 0], j=triples[:, 1], k=triples[:, 2], count=counts, zero_pseudocount=PSEUDOCOUNT)
         i, j, k = triples.T
-        observed = (counts + 0.5) * factors[i,j] * factors[i,k] * factors[j,k]
+        observed = protect_zeros(counts) * factors[i,j] * factors[i,k] * factors[j,k]
         pq.write_table(pa.table(dict(i=i, j=j, k=k, raw_count=counts, balanced_value=observed)), stage / 'observed_triplets.parquet')
         with (stage / 'bins.csv').open('w', newline='', encoding='utf-8') as stream:
             writer = csv.writer(stream)
@@ -177,8 +178,8 @@ def run(args):
             'bias_vector and bias_matrix are divisor factors in NPY and CSV formats.\n'
             'triplet_counts.npz holds unordered observed counts. Absent triplets have raw count zero.\n'
             'residual_pair_factors.npy (A) represents the complete normalized tensor with the counts.\n'
-            'For ANY i,j,k, R=(raw+0.5)*A[i,j]*A[i,k]*A[j,k]. All zero-count cells are included.\n'
-            'Recreate original binned counts by multiplying R by reconstruction_scalar*b[i]*b[j]*b[k]*M[i,j]*M[i,k]*M[j,k], then subtracting 0.5.\n'
+            'For ANY i,j,k, R=where(raw==0,1e-12,raw)*A[i,j]*A[i,k]*A[j,k]. All zero-count cells are included.\n'
+            'Recreate original binned counts by multiplying R by reconstruction_scalar*b[i]*b[j]*b[k]*M[i,j]*M[i,k]*M[j,k], then setting originally zero cells back to zero using triplet_counts.npz.\n'
             'observed_triplets.parquet contains only observed unordered triples; use the compact representation for other cells.\n'
             'If requested, visualization is a labeled regional excerpt of this full run.\n'
             'balanced_tensor.npy is the complete numerical tensor with every fiber sum equal to 1 within tolerance.\n'
